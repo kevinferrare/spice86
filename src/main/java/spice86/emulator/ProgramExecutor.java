@@ -102,7 +102,7 @@ public class ProgramExecutor implements java.io.Closeable {
     try {
       loader.loadFile(fileName);
     } catch (IOException e) {
-      throw new UnrecoverableException("Failed to read exe file " + fileName, e);
+      throw new UnrecoverableException("Failed to read file " + fileName, e);
     }
   }
 

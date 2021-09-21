@@ -2,7 +2,10 @@ package spice86.emulator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -162,7 +165,7 @@ public class MachineTest {
     return machine;
   }
 
-  private Machine execute(String binName) throws InvalidOperationException, IOException {
+  private Machine execute(String binName) throws InvalidOperationException, IOException, URISyntaxException {
     Configuration configuration = new Configuration();
     // making sure int8 is not going to be triggered during the tests
     configuration.setInstructionsPerSecond(10000000);
@@ -180,9 +183,10 @@ public class MachineTest {
     }
   }
 
-  private String getBinPath(String binName) {
+  private String getBinPath(String binName) throws URISyntaxException {
     ClassLoader classLoader = this.getClass().getClassLoader();
-    return classLoader.getResource("cpuTests/" + binName + ".bin").getPath().substring(1);
+    URL binUrl = classLoader.getResource("cpuTests/" + binName + ".bin");
+    return new File(binUrl.toURI()).getAbsolutePath();
   }
 
   private void compareMemoryWithExpected(Memory memory, byte[] expected, int start, int end) {
