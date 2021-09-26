@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javafx.scene.input.KeyCode;
 import spice86.emulator.errors.InvalidOperationException;
-import spice86.emulator.ioports.AllUnhandledIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
 import spice86.emulator.machine.Machine;
 import spice86.ui.Gui;
@@ -15,7 +15,7 @@ import spice86.ui.Gui;
 /**
  * Basic implementation of a keyboard
  */
-public class Keyboard extends AllUnhandledIOPortHandler {
+public class Keyboard extends DefaultIOPortHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(Keyboard.class);
 
   private static final int KEYBOARD_IO_PORT = 0x60;
@@ -23,8 +23,8 @@ public class Keyboard extends AllUnhandledIOPortHandler {
   private KeyScancodeConverter keyScancodeConverter = new KeyScancodeConverter();
   private Gui gui;
 
-  public Keyboard(Machine machine, Gui gui) {
-    super(machine);
+  public Keyboard(Machine machine, Gui gui, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
     this.gui = gui;
     if (gui != null) {
       gui.setOnKeyPressedEvent(this::onKeyEvent);

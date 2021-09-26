@@ -94,21 +94,33 @@ public class DosFileManager {
     return openFileInternal(fileName, hostFileName, "rw");
   }
 
-  public DosFileOperationResult openFile(String fileName, int accessMode) {
+  public DosFileOperationResult openFile(String fileName, int rwAccessMode) {
     String hostFileName = toHostFileName(fileName);
-    String openMode = FILE_OPEN_MODE.get(accessMode);
+    String openMode = FILE_OPEN_MODE.get(rwAccessMode);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Opening file {} with mode {}", hostFileName, openMode);
     }
     return openFileInternal(fileName, hostFileName, openMode);
   }
 
-  public DosFileOperationResult closeFile(int fileHandle) {
-
+  public DosFileOperationResult duplicateFileHandle(int fileHandle) {
     OpenFile file = getOpenFile(fileHandle);
     if (file == null) {
-      LOGGER.warn("File not opened: {}", fileHandle);
-      return DosFileOperationResult.error(0x06);
+      return fileNotOpenedError(fileHandle);
+    }
+    Integer freeIndex = findNextFreeFileIndex();
+    if (freeIndex == null) {
+      return noFreeHandleError();
+    }
+    int dosIndex = freeIndex + FILE_HANDLE_OFFSET;
+    setOpenFile(dosIndex, file);
+    return DosFileOperationResult.value16(dosIndex);
+  }
+
+  public DosFileOperationResult closeFile(int fileHandle) {
+    OpenFile file = getOpenFile(fileHandle);
+    if (file == null) {
+      return fileNotOpenedError(fileHandle);
     }
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Closed {}, file was loaded in ram in those addresses: {}", file.getName(),
@@ -116,7 +128,10 @@ public class DosFileManager {
     }
     setOpenFile(fileHandle, null);
     try {
-      file.getRandomAccessFile().close();
+      if (countHandles(file) == 0) {
+        // Only close the file if no other handle to it exist.
+        file.getRandomAccessFile().close();
+      }
     } catch (IOException e) {
       throw new UnrecoverableException("IOException while closing file", e);
     }
@@ -126,7 +141,7 @@ public class DosFileManager {
   public DosFileOperationResult readFile(int fileHandle, int readLength, int targetAddress) {
     OpenFile file = getOpenFile(fileHandle);
     if (file == null) {
-      return handleFileNotOpenedError(fileHandle);
+      return fileNotOpenedError(fileHandle);
     }
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Reading from file {}", file.getName());
@@ -142,8 +157,10 @@ public class DosFileManager {
       // EOF
       return DosFileOperationResult.value16(0);
     }
-    memory.loadData(targetAddress, buffer, actualReadLength);
-    file.addMemoryRange(new MemoryRange(targetAddress, targetAddress + actualReadLength, file.getName()));
+    if (actualReadLength > 0) {
+      memory.loadData(targetAddress, buffer, actualReadLength);
+      file.addMemoryRange(new MemoryRange(targetAddress, targetAddress + actualReadLength - 1, file.getName()));
+    }
     return DosFileOperationResult.value16(actualReadLength);
   }
 
@@ -155,7 +172,7 @@ public class DosFileManager {
     }
     OpenFile file = getOpenFile(fileHandle);
     if (file == null) {
-      return handleFileNotOpenedError(fileHandle);
+      return fileNotOpenedError(fileHandle);
     }
     try {
       file.getRandomAccessFile().write(memory.getRam(), bufferAddress, writeLength);
@@ -168,7 +185,7 @@ public class DosFileManager {
   public DosFileOperationResult moveFilePointerUsingHandle(int originOfMove, int fileHandle, int offset) {
     OpenFile file = getOpenFile(fileHandle);
     if (file == null) {
-      return handleFileNotOpenedError(fileHandle);
+      return fileNotOpenedError(fileHandle);
     }
     LOGGER.info("Moving in file {}", file.getName());
     RandomAccessFile randomAccessFile = file.getRandomAccessFile();
@@ -292,9 +309,24 @@ public class DosFileManager {
     return (int)newOffset;
   }
 
-  private DosFileOperationResult handleFileNotOpenedError(int fileHandle) {
+  private DosFileOperationResult noFreeHandleError() {
+    LOGGER.warn("Could not find a free handle");
+    return DosFileOperationResult.error(0x04);
+  }
+
+  private DosFileOperationResult fileNotOpenedError(int fileHandle) {
     LOGGER.warn("File not opened: {}", fileHandle);
     return DosFileOperationResult.error(0x06);
+  }
+
+  private int countHandles(OpenFile openFileToCount) {
+    int count = 0;
+    for (OpenFile openFile : openFiles) {
+      if (openFile == openFileToCount) {
+        count++;
+      }
+    }
+    return count;
   }
 
   private OpenFile getOpenFile(int fileHandle) {
@@ -308,8 +340,7 @@ public class DosFileManager {
   private DosFileOperationResult openFileInternal(String fileName, String hostFileName, String openMode) {
     Integer freeIndex = findNextFreeFileIndex();
     if (freeIndex == null) {
-      LOGGER.warn("Could not find a free handle");
-      return DosFileOperationResult.error(0x04);
+      return noFreeHandleError();
     }
     int dosIndex = freeIndex + FILE_HANDLE_OFFSET;
     try {

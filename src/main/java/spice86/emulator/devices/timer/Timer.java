@@ -6,9 +6,8 @@ import org.slf4j.LoggerFactory;
 import spice86.emulator.devices.externalinterrupt.Pic;
 import spice86.emulator.devices.video.VgaCard;
 import spice86.emulator.errors.InvalidOperationException;
-import spice86.emulator.ioports.AllUnhandledIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
-import spice86.emulator.ioports.UnhandledIOPortException;
 import spice86.emulator.machine.Machine;
 
 /**
@@ -17,7 +16,7 @@ import spice86.emulator.machine.Machine;
  * Triggers interrupt 8 on the CPU via the PIC.<br/>
  * https://k.lse.epita.fr/internals/8254_controller.html
  */
-public class Timer extends AllUnhandledIOPortHandler {
+public class Timer extends DefaultIOPortHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(Timer.class);
   private static final int COUNTER_REGISTER_0 = 0x40;
   private static final int COUNTER_REGISTER_1 = 0x41;
@@ -32,8 +31,8 @@ public class Timer extends AllUnhandledIOPortHandler {
   private VgaCard vgaCard;
 
   public Timer(Machine machine, Pic pic, VgaCard vgaCard,
-      long instructionsPerSecond) {
-    super(machine);
+      long instructionsPerSecond, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
     this.pic = pic;
     this.vgaCard = vgaCard;
     this.cpu = machine.getCpu();
@@ -75,7 +74,7 @@ public class Timer extends AllUnhandledIOPortHandler {
       LOGGER.info("READING COUNTER {}, partial value is {}", counter, value);
       return value;
     }
-    throw new UnhandledIOPortException(machine, port);
+    return super.inb(port);
   }
 
   private boolean isCounterRegisterPort(int port) {
@@ -98,7 +97,7 @@ public class Timer extends AllUnhandledIOPortHandler {
       LOGGER.info("SETTING CONTROL REGISTER FOR COUNTER {}. {}", counterIndex, counter);
       return;
     }
-    throw new UnhandledIOPortException(machine, port);
+    super.outb(port, value);
   }
 
   private Counter getCounter(int counterIndex) throws InvalidCounterIndexException {

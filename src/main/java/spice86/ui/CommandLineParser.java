@@ -105,6 +105,12 @@ public class CommandLineParser {
     return ConvertUtils.hexToByteArray(value);
   }
 
+  private boolean parseFailOnUnhandledPort(String value) {
+    Boolean booleanValue = BooleanUtils.toBooleanObject(value);
+    // By default if null will return false
+    return BooleanUtils.isTrue(booleanValue);
+  }
+
   @SuppressWarnings("java:S106")
   public Configuration parseCommandLine(Application.Parameters parameters) {
     Configuration configuration = new Configuration();
@@ -124,7 +130,8 @@ public class CommandLineParser {
                   --overrideSupplierClassName=<Name of a class in the classpath that will generate the initial function informations. See documentation for more information.>
                   --useCodeOverride=<true or false> if false it will use the names provided by overrideSupplierClassName but not the code
                   --programEntryPointSegment=<Segment where to load the program. DOS PSP and MCB will be created before it>
-                  --expectedChecksum=<Hexadecimal string representing the expected checksum of the checksum>""");
+                  --expectedChecksum=<Hexadecimal string representing the expected checksum of the checksum>
+                  --failOnUnhandledPort=<if true, will fail when encountering an unhandled IO port. Useful to check for unimplemented hardware. false by default.>""");
       return null;
     }
     Map<String, String> commandLineParameters = parameters.getNamed();
@@ -142,6 +149,8 @@ public class CommandLineParser {
         this.parseProgramEntryPointSegment(commandLineParameters.get("programEntryPointSegment")));
     configuration
         .setExpectedChecksum(this.parseExpectedChecksum(commandLineParameters.get("expectedChecksum")));
+    configuration.setFailOnUnhandledPort(this.parseFailOnUnhandledPort(commandLineParameters.get("failOnUnhandledPort")));
+
     return configuration;
   }
 }

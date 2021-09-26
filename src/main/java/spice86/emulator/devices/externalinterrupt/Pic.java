@@ -8,9 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.errors.UnhandledOperationException;
-import spice86.emulator.ioports.AllUnhandledIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
-import spice86.emulator.ioports.UnhandledIOPortException;
 import spice86.emulator.machine.Machine;
 import spice86.utils.ConvertUtils;
 
@@ -22,7 +21,7 @@ import spice86.utils.ConvertUtils;
  * <li>https://k.lse.epita.fr/internals/8259a_controller.html</li>
  * </ul>
  */
-public class Pic extends AllUnhandledIOPortHandler {
+public class Pic extends DefaultIOPortHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(Pic.class);
   private static final int MASTER_PORT_A = 0x20;
   private static final int MASTER_PORT_B = 0x21;
@@ -43,9 +42,8 @@ public class Pic extends AllUnhandledIOPortHandler {
   private int interruptMask = 0;
   private boolean lastIrqAcknowledged = true;
 
-  public Pic(Machine machine, boolean initialized) {
-    super(machine);
-    this.cpu = machine.getCpu();
+  public Pic(Machine machine, boolean initialized, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
     this.inintialized = initialized;
   }
 
@@ -181,6 +179,6 @@ public class Pic extends AllUnhandledIOPortHandler {
       processPortBCommand(value);
       return;
     }
-    throw new UnhandledIOPortException(machine, port);
+    super.outb(port, value);
   }
 }

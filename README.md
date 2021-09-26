@@ -1,4 +1,4 @@
-# Spice86 - An x86 emulator for spicy real mode reverse engineerings!
+# Spice86 - A PC emulator for real mode reverse engineering
 
 Spice86 is a tool to execute, reverse engineer and rewrite real mode dos programs for which source code is not available.
 
@@ -10,8 +10,8 @@ Rewriting a program from only the binary is a hard task.
 Spice86 is a tool that helps you do so with a methodic divide and conquer approach.
 
 General process:
-- You start by emulating the whole program in a custom VM provided by Spice86.
-- This VM allows you to override bit by bit the assembly code with java functions you provide :)
+- You start by emulating the program in the Spice86 emulator.
+- This emulator allows you to gradually reimplement the assembly code with your java methods
 - This is helpful because:
   - Small sequences of assembly can be statically analyzed and are generally easy to translate to a higher level language.
   - You work all the time with a fully working version of the program so it is relatively easy to catch mistakes early.
@@ -112,7 +112,7 @@ Here you can see that:
 - The generated name unknown_0x2538_0x151_0x254D1 can be copy pasted directly in java to start overriding it.
 - The physical address of the function is 0x254D1 in RAM (2538:0151 segmented)
 - It spawns 11482 bytes (estimated distance between the entry point and the returns)
-- VM encounterd several returns and it is called by one caller only
+- Emulator encounterd several returns and it is called by one caller only
 - It calls 3 other methods and 2 are overriden already
 
 You can also dump the functions as CSV for import and processing in a spreadsheet:
@@ -157,7 +157,7 @@ Open the CSV file in a spreadsheet, filter functions that are overridable and no
 
 Overridable means that the function calls no other function, or that it calls only overridden functions as calling Java from ASM is supported but ASM from Java is not.
 
-If you sort by approximate size, you are likely to get the easiest targets first :)
+If you sort by approximate size, you are likely to get the easiest targets first.
 
 Note that approximate size does not always reflect the real size of the function as it is the difference between entry point address and encountered return address. A small function can sometimes be a monster that only got partially executed.
 
@@ -171,9 +171,9 @@ Go to this address:
 
 ![](doc/function_C0B8_ghidra.png)
 
-As you can see, it is very simple:
-- Increases the byte at address DS:47A8
-- Does a near ret
+As you can see, it is 2 lines and is very simple:
+- Instruction at address C0B8 increases the byte at address DS:47A8 by one
+- Instruction at address C0BC does a near ret
 
 From there you can re-implement (override) the function and continue with the next one (see next chapter on how to do so).
 
@@ -184,7 +184,7 @@ It is useful to document the relevant inputs and outputs.
 To get a better understanding of the environment of a function, and especially what it calls, you can check it in the dump provided by **dumpfunctions**
 ## Overriding emulated code with Java code
 
-This is where things start to get fun :)
+This is where things start to get fun!
 
 You can provide your own Java code to override the program original assembly code.
 
@@ -242,7 +242,7 @@ public class MyOverrides extends JavaOverrideHelper {
     // Assembly for this would be
     // INC AX
     // RETF
-    // Note that you can access the whole VM to change the state in the overrides.
+    // Note that you can access the whole emulator to change the state in the overrides.
     state.setAX(state.getAX() + 1);
     return nearRet();
   }
@@ -311,7 +311,7 @@ Since time depends on the number of instructions elapsed, timer ticks will becom
 ### Screen refresh
 Screen is refreshed 60 times per emulated second and each time a VGA retrace wait is detected (see VideoBiosServicesDispatcher::tick3DA).
 
-### VM features
+### Emulator features
 CPU:
 - Only 16 bits instructions are supported, memory size is 1MB
 - The only supported addressing mode is real mode. 286/386 Protected mode and the related instructions are not implemented.
@@ -325,9 +325,17 @@ Graphics:
 - Only VGA mode 0x13 is implemented
 
 DOS:
-- Part of int 21
+- Part of int 21 is implemented. Identifies itself as dos 5.0 for now.
 
-Some hardware features are not emulated and missing.
+Input:
+- Keyboard
+- Mouse (callback in mouse driver not implemented yet)
+- No joystick for now
+
+Sound:
+- No sound for now, games will not detect sound blaster or adlib.
+
+Compatibility list availble [here](COMPATIBILITY.md).
 
 ### How to build
 Locally you will need:

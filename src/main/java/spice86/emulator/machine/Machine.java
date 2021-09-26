@@ -18,6 +18,7 @@ import spice86.emulator.function.CallType;
 import spice86.emulator.function.FunctionHandler;
 import spice86.emulator.interrupthandlers.bios.BiosEquipmentDeterminationInt11Handler;
 import spice86.emulator.interrupthandlers.bios.SystemBiosInt15Handler;
+import spice86.emulator.interrupthandlers.dos.DosInt20Handler;
 import spice86.emulator.interrupthandlers.dos.DosInt21Handler;
 import spice86.emulator.interrupthandlers.input.keyboard.BiosKeyboardInt9Handler;
 import spice86.emulator.interrupthandlers.input.keyboard.KeyboardInt16Handler;
@@ -63,14 +64,15 @@ public class Machine {
   private BiosEquipmentDeterminationInt11Handler biosEquipmentDeterminationInt11Handler;
   private SystemBiosInt15Handler systemBiosInt15Handler;
   private KeyboardInt16Handler keyboardInt16Handler;
+  private DosInt20Handler dosInt20Handler;
   private DosInt21Handler dosInt21Handler;
   private MouseInt33Handler mouseInt33Handler;
 
   private MachineBreakpoints machineBreakpoints;
 
-  public Machine(Gui gui, long instructionsPerSecond) {
+  public Machine(Gui gui, long instructionsPerSecond, boolean failOnUnhandledPort) {
     this.gui = gui;
-    initHardware(instructionsPerSecond);
+    initHardware(instructionsPerSecond, failOnUnhandledPort);
     initServices();
   }
 
@@ -158,6 +160,10 @@ public class Machine {
     return keyboardInt16Handler;
   }
 
+  public DosInt20Handler getDosInt20Handler() {
+    return dosInt20Handler;
+  }
+
   public DosInt21Handler getDosInt21Handler() {
     return dosInt21Handler;
   }
@@ -185,7 +191,7 @@ public class Machine {
     return "null";
   }
 
-  private final void initHardware(long instructionsPerSecond) {
+  private final void initHardware(long instructionsPerSecond, boolean failOnUnhandledPort) {
     // A full 1MB of addressable memory :)
     memory = new Memory(0x100_000);
 
@@ -197,34 +203,34 @@ public class Machine {
     machineBreakpoints = new MachineBreakpoints(this);
 
     // IO devices
-    ioPortDispatcher = new IOPortDispatcher(this);
+    ioPortDispatcher = new IOPortDispatcher(this, failOnUnhandledPort);
     cpu.setIoPortDispatcher(ioPortDispatcher);
 
-    pic = new Pic(this, true);
+    pic = new Pic(this, true, failOnUnhandledPort);
     register(pic);
 
-    vgaCard = new VgaCard(this, gui);
+    vgaCard = new VgaCard(this, gui, failOnUnhandledPort);
     register(vgaCard);
 
-    timer = new Timer(this, pic, vgaCard, instructionsPerSecond);
+    timer = new Timer(this, pic, vgaCard, instructionsPerSecond, failOnUnhandledPort);
     register(timer);
 
-    keyboard = new Keyboard(this, gui);
+    keyboard = new Keyboard(this, gui, failOnUnhandledPort);
     register(keyboard);
 
-    joystick = new Joystick();
+    joystick = new Joystick(this, failOnUnhandledPort);
     register(joystick);
 
-    pcSpeaker = new PcSpeaker();
+    pcSpeaker = new PcSpeaker(this, failOnUnhandledPort);
     register(pcSpeaker);
 
-    soundBlaster = new SoundBlaster();
+    soundBlaster = new SoundBlaster(this, failOnUnhandledPort);
     register(soundBlaster);
 
-    gravisUltraSound = new GravisUltraSound();
+    gravisUltraSound = new GravisUltraSound(this, failOnUnhandledPort);
     register(gravisUltraSound);
 
-    midi = new Midi();
+    midi = new Midi(this, failOnUnhandledPort);
     register(midi);
   }
 
@@ -254,6 +260,9 @@ public class Machine {
 
     systemClockInt1AHandler = new SystemClockInt1AHandler(this, timerInt8Handler);
     register(systemClockInt1AHandler);
+
+    dosInt20Handler = new DosInt20Handler(this);
+    register(dosInt20Handler);
 
     dosInt21Handler = new DosInt21Handler(this);
     register(dosInt21Handler);
