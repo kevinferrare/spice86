@@ -1,12 +1,13 @@
 package spice86.emulator.devices.sound;
 
-import spice86.emulator.ioports.DummyIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
+import spice86.emulator.machine.Machine;
 
 /**
  * Sound blaster implementation. Emulates an absent card :) http://www.fysnet.net/detectsb.htm
  */
-public class SoundBlaster extends DummyIOPortHandler {
+public class SoundBlaster extends DefaultIOPortHandler {
   private static final int LEFT_SPEAKER_STATUS_PORT_NUMBER = 0x220;
   private static final int LEFT_SPEAKER_DATA_PORT_NUMBER = 0x221;
   private static final int RIGHT_SPEAKER_STATUS_PORT_NUMBER = 0x222;
@@ -21,6 +22,10 @@ public class SoundBlaster extends DummyIOPortHandler {
   private static final int DSP_READ_PORT_NUMBER = 0x22A;
   private static final int DSP_WRITE_BUFFER_STATUS_PORT_NUMBER = 0x22C;
   private static final int DSP_DATA_AVAILABLE_PORT_NUMBER = 0x22E;
+
+  public SoundBlaster(Machine machine, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
+  }
 
   @Override
   public void initPortHandlers(IOPortDispatcher ioPortDispatcher) {

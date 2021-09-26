@@ -325,9 +325,17 @@ Graphics:
 - Only VGA mode 0x13 is implemented
 
 DOS:
-- Part of int 21
+- Part of int 21 is implemented. Identifies itself as dos 5.0 for now.
 
-Some hardware features are not emulated and missing.
+Input:
+- Keyboard
+- Mouse (callback in mouse driver not implemented yet)
+- No joystick for now
+
+Sound:
+- No sound for now, games will not detect sound blaster or adlib.
+
+Compatibility list availble [here](COMPATIBILITY.md).
 
 ### How to build
 Locally you will need:

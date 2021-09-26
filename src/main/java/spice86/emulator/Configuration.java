@@ -14,6 +14,7 @@ public class Configuration {
   private OverrideSupplier overrideSupplier;
   private boolean useCodeOverride;
   private boolean installInterruptVector;
+  private boolean failOnUnhandledPort;
   private int programEntryPointSegment;
   private byte[] expectedChecksum = new byte[0];
 
@@ -71,6 +72,14 @@ public class Configuration {
 
   public void setInstallInterruptVector(boolean installInterruptVector) {
     this.installInterruptVector = installInterruptVector;
+  }
+
+  public boolean isFailOnUnhandledPort() {
+    return failOnUnhandledPort;
+  }
+
+  public void setFailOnUnhandledPort(boolean failOnUnhandledPort) {
+    this.failOnUnhandledPort = failOnUnhandledPort;
   }
 
   public int getProgramEntryPointSegment() {

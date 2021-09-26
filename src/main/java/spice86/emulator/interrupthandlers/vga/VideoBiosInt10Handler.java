@@ -125,6 +125,8 @@ public class VideoBiosInt10Handler extends InterruptHandler {
     }
     if (op == 0x12) {
       setBlockOfDacColorRegisters();
+    } else if (op == 0x17) {
+      getBlockOfDacColorRegisters();
     } else {
       throw new UnhandledOperationException(machine,
           "Unhandled operation for get/set palette registers op=" + ConvertUtils.toHex8(op));
@@ -179,6 +181,19 @@ public class VideoBiosInt10Handler extends InterruptHandler {
     }
     int colorValuesAddress = MemoryUtils.toPhysicalAddress(state.getES(), state.getDX());
     vgaCard.setBlockOfDacColorRegisters(firstRegisterToSet, numberOfColorsToSet, colorValuesAddress);
+  }
+
+  public void getBlockOfDacColorRegisters() {
+    int firstRegisterToGet = state.getBX();
+    int numberOfColorsToGet = state.getCX();
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info(
+          "GET BLOCKS OF DAC COLOR REGISTERS. First register is {}, getting {} colors, values are to be stored at address {}",
+          ConvertUtils.toHex(firstRegisterToGet),
+          numberOfColorsToGet, ConvertUtils.toSegmentedAddressRepresentation(state.getES(), state.getDX()));
+    }
+    int colorValuesAddress = MemoryUtils.toPhysicalAddress(state.getES(), state.getDX());
+    vgaCard.getBlockOfDacColorRegisters(firstRegisterToGet, numberOfColorsToGet, colorValuesAddress);
   }
 
   public int getVideoModeValue() {

@@ -4,9 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import spice86.emulator.errors.InvalidOperationException;
-import spice86.emulator.ioports.AllUnhandledIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
-import spice86.emulator.ioports.UnhandledIOPortException;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.MemoryMap;
 import spice86.emulator.memory.MemoryUtils;
@@ -15,7 +14,7 @@ import spice86.ui.Gui;
 /**
  * Implementation of VGA card, currently only supports mode 0x13.<br/>
  */
-public class VgaCard extends AllUnhandledIOPortHandler {
+public class VgaCard extends DefaultIOPortHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(VgaCard.class);
 
   public static final int CRT_IO_PORT = 0x03D4;
@@ -35,8 +34,8 @@ public class VgaCard extends AllUnhandledIOPortHandler {
   private byte crtStatusRegister;
   private boolean drawing = false;
 
-  public VgaCard(Machine machine, Gui gui) {
-    super(machine);
+  public VgaCard(Machine machine, Gui gui, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
     this.gui = gui;
     this.vgaDac = new VgaDac(machine);
   }
@@ -107,10 +106,20 @@ public class VgaCard extends AllUnhandledIOPortHandler {
     }
   }
 
-  public void setBlockOfDacColorRegisters(int firstRegisterToSet, int numberOfColorsToSet, int colorValuesAddress) {
+  public void getBlockOfDacColorRegisters(int firstRegister, int numberOfColors, int colorValuesAddress) {
     Rgb[] rgbs = vgaDac.getRgbs();
-    for (int i = 0; i < numberOfColorsToSet; i++) {
-      int registerToSet = firstRegisterToSet + i;
+    for (int i = 0; i < numberOfColors; i++) {
+      int registerToSet = firstRegister + i;
+      Rgb rgb = rgbs[registerToSet];
+      memory.setUint8(colorValuesAddress++, VgaDac.from8bitTo6bitColor(rgb.getR()));
+      memory.setUint8(colorValuesAddress++, VgaDac.from8bitTo6bitColor(rgb.getG()));
+      memory.setUint8(colorValuesAddress++, VgaDac.from8bitTo6bitColor(rgb.getB()));
+    }
+  }
+  public void setBlockOfDacColorRegisters(int firstRegister, int numberOfColors, int colorValuesAddress) {
+    Rgb[] rgbs = vgaDac.getRgbs();
+    for (int i = 0; i < numberOfColors; i++) {
+      int registerToSet = firstRegister + i;
       Rgb rgb = rgbs[registerToSet];
       rgb.setR(VgaDac.from6bitColorTo8bit(memory.getUint8(colorValuesAddress++)));
       rgb.setG(VgaDac.from6bitColorTo8bit(memory.getUint8(colorValuesAddress++)));
@@ -150,7 +159,7 @@ public class VgaCard extends AllUnhandledIOPortHandler {
     } else if (port == VGA_RGB_DATA_PORT) {
       return rgbDataRead();
     }
-    throw new UnhandledIOPortException(machine, port);
+    return super.inb(port);
   }
 
   @Override
@@ -165,17 +174,8 @@ public class VgaCard extends AllUnhandledIOPortHandler {
       boolean vsync = (value & 0b100) != 1;
       LOGGER.info("Vsync value set to {} (this is not implemented)", vsync);
     } else {
-      throw new UnhandledIOPortException(machine, port);
+      super.outb(port, value);
     }
   }
 
-  @Override
-  public void outw(int port, int value) throws InvalidOperationException {
-    if (port == VGA_SEQUENCER_ADDRESS_REGISTER_PORT || port == VGA_SEQUENCER_DATA_REGISTER_PORT
-        || port == GRAPHICS_ADDRESS_REGISTER_PORT) {
-      // Not implemented
-      return;
-    }
-    throw new UnhandledIOPortException(machine, port);
-  }
 }

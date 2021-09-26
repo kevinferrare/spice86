@@ -23,6 +23,9 @@ public class MouseInt33Handler extends InterruptHandler {
   private int mouseMinY;
   private int mouseMaxX;
   private int mouseMaxY;
+  private int userCallbackMask;
+  private int userCallbackSegment;
+  private int userCallbackOffset;
 
   public MouseInt33Handler(Machine machine, Gui gui) {
     super(machine);
@@ -35,6 +38,9 @@ public class MouseInt33Handler extends InterruptHandler {
     super.dispatchTable.put(0x0C, this::setMouseUserDefinedSubroutine);
     super.dispatchTable.put(0x0F, this::setMouseMickeyPixelRatio);
     super.dispatchTable.put(0x13, this::setMouseDoubleSpeedThreshold);
+    super.dispatchTable.put(0x14, this::swapMouseUserDefinedSubroutine);
+    super.dispatchTable.put(0x1A, this::setMouseSensivity);
+
   }
 
   private int restrictValue(int value, int maxValue, int min, int max, int range) {
@@ -87,8 +93,11 @@ public class MouseInt33Handler extends InterruptHandler {
   }
 
   public void setMouseUserDefinedSubroutine() {
-    int mask = state.getCX();
-    LOGGER.info("SET MOUSE USER DEFINED SUBROUTINE (unimplemented!) mask={}", mask);
+    userCallbackMask = state.getCX();
+    userCallbackSegment = state.getES();
+    userCallbackOffset = state.getDX();
+    LOGGER.info("SET MOUSE USER DEFINED SUBROUTINE (unimplemented!) mask={}, segment={}, offset={}", userCallbackMask,
+        userCallbackSegment, userCallbackOffset);
   }
 
   public void setMouseMickeyPixelRatio() {
@@ -100,6 +109,28 @@ public class MouseInt33Handler extends InterruptHandler {
   public void setMouseDoubleSpeedThreshold() {
     int threshold = state.getDX();
     LOGGER.info("SET MOUSE DOUBLE SPEED THRESHOLD threshold={}", threshold);
+  }
+
+  public void swapMouseUserDefinedSubroutine() {
+    int newUserCallbackMask = state.getCX();
+    int newUserCallbackSegment = state.getES();
+    int newUserCallbackOffset = state.getDX();
+    LOGGER.info("SWAP MOUSE USER DEFINED SUBROUTINE (unimplemented!) mask={}, segment={}, offset={}",
+        newUserCallbackMask, newUserCallbackSegment, newUserCallbackOffset);
+    state.setCX(userCallbackMask);
+    state.setES(userCallbackSegment);
+    state.setDX(userCallbackOffset);
+    userCallbackMask = newUserCallbackMask;
+    userCallbackOffset = newUserCallbackOffset;
+    userCallbackSegment = newUserCallbackSegment;
+  }
+
+  public void setMouseSensivity() {
+    int horizontalSpeed = state.getBX();
+    int verticalSpeed = state.getCX();
+    int threshold = state.getDX();
+    LOGGER.info("SET MOUSE SENSIVITY horizontalSpeed={}, verticalSpeed={}, threshold={}", horizontalSpeed,
+        verticalSpeed, threshold);
   }
 
   @Override

@@ -51,7 +51,7 @@ public class ProgramExecutor implements java.io.Closeable {
   }
 
   private final void createMachine(Gui gui, Configuration configuration) {
-    machine = new Machine(gui, configuration.getInstructionsPerSecond());
+    machine = new Machine(gui, configuration.getInstructionsPerSecond(), configuration.isFailOnUnhandledPort());
     initializeCpu();
     initializeDos(configuration);
     initializeFunctionHandlers(configuration);

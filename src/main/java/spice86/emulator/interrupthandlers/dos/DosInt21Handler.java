@@ -64,6 +64,7 @@ public class DosInt21Handler extends InterruptHandler {
     super.dispatchTable.put(0x30, this::getDosVersion);
     super.dispatchTable.put(0x33, this::getSetControlBreak);
     super.dispatchTable.put(0x35, this::getInterruptVector);
+    super.dispatchTable.put(0x36, this::getFreeDiskSpace);
     super.dispatchTable.put(0x3B, () -> changeCurrentDirectory(true));
     super.dispatchTable.put(0x3C, () -> createFileUsingHandle(true));
     super.dispatchTable.put(0x3D, () -> openFile(true));
@@ -73,6 +74,7 @@ public class DosInt21Handler extends InterruptHandler {
     super.dispatchTable.put(0x43, () -> getSetFileAttribute(true));
     super.dispatchTable.put(0x44, () -> ioControl(true));
     super.dispatchTable.put(0x42, () -> moveFilePointerUsingHandle(true));
+    super.dispatchTable.put(0x45, () -> duplicateFileHandle(true));
     super.dispatchTable.put(0x47, () -> getCurrentDirectory(true));
     super.dispatchTable.put(0x48, () -> allocateMemoryBlock(true));
     super.dispatchTable.put(0x49, () -> freeMemoryBlock(true));
@@ -141,7 +143,8 @@ public class DosInt21Handler extends InterruptHandler {
   public void selectDefaultDrive() {
     defaultDrive = state.getDL();
     LOGGER.info("SELECT DEFAULT DRIVE {}", defaultDrive);
-    state.setAL(0x1A);
+    // Number of valid drive letters
+    state.setAL(26);
   }
 
   public void setDiskTransferAddress() {
@@ -206,8 +209,8 @@ public class DosInt21Handler extends InterruptHandler {
 
   public void getDosVersion() {
     LOGGER.info("GET DOS VERSION");
-    // 2.0
-    state.setAL(0x02);
+    // 5.0
+    state.setAL(0x05);
     state.setAH(0x00);
     // FF => MS DOS
     state.setBH(0xFF);
@@ -243,6 +246,19 @@ public class DosInt21Handler extends InterruptHandler {
     state.setBX(offset);
   }
 
+  public void getFreeDiskSpace() {
+    int driveNumber = state.getDL();
+    LOGGER.info("GET FREE DISK SPACE FOR DRIVE {}", driveNumber);
+    // 127 sectors per cluster
+    state.setAX(127);
+    // 512 bytes per sector
+    state.setCX(512);
+    // 4096 clusters available (~250MB)
+    state.setBX(4096);
+    // 8192 total clusters on disk (~500MB)
+    state.setDX(8192);
+  }
+
   public void changeCurrentDirectory(boolean calledFromVm) {
     String newDirectory = getStringAtDsDx();
     LOGGER.info("SET CURRENT DIRECTORY: {}", newDirectory);
@@ -261,10 +277,12 @@ public class DosInt21Handler extends InterruptHandler {
   public void openFile(boolean calledFromVm) {
     String fileName = getStringAtDsDx();
     int accessMode = state.getAL();
+    int rwAccessMode = accessMode & 0b111;
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info("OPEN FILE {} with mode {}", fileName, ConvertUtils.toHex8(accessMode));
+      LOGGER.info("OPEN FILE {} with mode {} (rwAccessMode:{})", fileName, ConvertUtils.toHex8(accessMode),
+          ConvertUtils.toHex8(rwAccessMode));
     }
-    DosFileOperationResult dosFileOperationResult = dosFileManager.openFile(fileName, accessMode);
+    DosFileOperationResult dosFileOperationResult = dosFileManager.openFile(fileName, rwAccessMode);
     setStateFromDosFileOperationResult(calledFromVm, dosFileOperationResult);
   }
 
@@ -357,6 +375,15 @@ public class DosInt21Handler extends InterruptHandler {
         int res = device < DosFileManager.FILE_HANDLE_OFFSET ? 0x80D3 : 0x02;
         state.setDX(res);
       }
+      case 1 -> {
+        LOGGER.info("SET DEVICE INFORMATION (unimplemented)");
+      }
+      case 0xE -> {
+        int driveNumber = state.getBL();
+        LOGGER.info("GET LOGICAL DRIVE FOR PHYSICAL DRIVE {}", driveNumber);
+        // Only one drive
+        state.setAL(0);
+      }
       default -> throw new UnhandledOperationException(machine, "IO Control operation unhandled: " + op);
     }
   }
@@ -370,6 +397,13 @@ public class DosInt21Handler extends InterruptHandler {
 
     DosFileOperationResult dosFileOperationResult =
         dosFileManager.moveFilePointerUsingHandle(originOfMove, fileHandle, offset);
+    setStateFromDosFileOperationResult(calledFromVm, dosFileOperationResult);
+  }
+
+  public void duplicateFileHandle(boolean calledFromVm) {
+    int fileHandle = state.getBX();
+    LOGGER.info("DUPLICATE FILE HANDLE. fileHandle={}", fileHandle);
+    DosFileOperationResult dosFileOperationResult = dosFileManager.duplicateFileHandle(fileHandle);
     setStateFromDosFileOperationResult(calledFromVm, dosFileOperationResult);
   }
 

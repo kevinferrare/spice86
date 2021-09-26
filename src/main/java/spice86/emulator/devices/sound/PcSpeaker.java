@@ -4,18 +4,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import spice86.emulator.errors.InvalidOperationException;
-import spice86.emulator.ioports.DummyIOPortHandler;
+import spice86.emulator.ioports.DefaultIOPortHandler;
 import spice86.emulator.ioports.IOPortDispatcher;
+import spice86.emulator.machine.Machine;
 import spice86.utils.ConvertUtils;
 
 /**
  * PC speaker implementation. Does not produce any sound, just handles the bare minimum to make programs run.
  */
-public class PcSpeaker extends DummyIOPortHandler {
+public class PcSpeaker extends DefaultIOPortHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(PcSpeaker.class);
   private static final int PC_SPEAKER_PORT_NUMBER = 0x61;
 
   private int value;
+
+  public PcSpeaker(Machine machine, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
+  }
 
   @Override
   public void initPortHandlers(IOPortDispatcher ioPortDispatcher) {

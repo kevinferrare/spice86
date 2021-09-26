@@ -9,12 +9,12 @@ import spice86.emulator.machine.Machine;
 /**
  * Handles calling the correct dispatcher depending on port number for I/O reads and writes.
  */
-public class IOPortDispatcher {
-  private Machine machine;
+public class IOPortDispatcher extends DefaultIOPortHandler {
   private Map<Integer, IOPortHandler> ioPortHandlers = new HashMap<>();
 
-  public IOPortDispatcher(Machine machine) {
-    this.machine = machine;
+  public IOPortDispatcher(Machine machine, boolean failOnUnhandledPort) {
+    super(machine, failOnUnhandledPort);
+    this.failOnUnhandledPort = failOnUnhandledPort;
   }
 
   public void addIOPortHandler(int port, IOPortHandler ioPortHandler) {
@@ -25,21 +25,21 @@ public class IOPortDispatcher {
     if (ioPortHandlers.containsKey(port)) {
       return ioPortHandlers.get(port).inb(port);
     }
-    throw new UnhandledIOPortException(machine, port);
+    return super.inb(port);
   }
 
   public int inw(int port) throws InvalidOperationException {
     if (ioPortHandlers.containsKey(port)) {
       return ioPortHandlers.get(port).inw(port);
     }
-    throw new UnhandledIOPortException(machine, port);
+    return super.inw(port);
   }
 
   public void outb(int port, int value) throws InvalidOperationException {
     if (ioPortHandlers.containsKey(port)) {
       ioPortHandlers.get(port).outb(port, value);
     } else {
-      throw new UnhandledIOPortException(machine, port);
+      super.outb(port, value);
     }
   }
 
@@ -47,7 +47,12 @@ public class IOPortDispatcher {
     if (ioPortHandlers.containsKey(port)) {
       ioPortHandlers.get(port).outw(port, value);
     } else {
-      throw new UnhandledIOPortException(machine, port);
+      super.outw(port, value);
     }
+  }
+
+  @Override
+  public void initPortHandlers(IOPortDispatcher ioPortDispatcher) {
+    // Nothing to implement, just for API compatibility.
   }
 }

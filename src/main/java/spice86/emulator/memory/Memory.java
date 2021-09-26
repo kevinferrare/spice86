@@ -51,10 +51,22 @@ public class Memory {
     System.arraycopy(data, 0, physicalMemory, address, length);
   }
 
+  public byte[] getData(int address, int length) {
+    byte[] res = new byte[length];
+    System.arraycopy(physicalMemory, 0, res, 0, length);
+    return res;
+  }
+
   public void memCopy(int sourceAddress, int destinationAddress, int length) {
     for (int i = 0; i < length; i++) {
       int value = this.getUint8(sourceAddress + i);
       this.setUint8(destinationAddress + i, value);
+    }
+  }
+
+  public void memset(int address, int value, int length) {
+    for (int i = 0; i < length; i++) {
+      this.setUint8(address + i, value);
     }
   }
 

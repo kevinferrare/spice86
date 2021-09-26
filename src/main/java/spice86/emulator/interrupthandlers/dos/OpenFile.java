@@ -23,8 +23,19 @@ public class OpenFile {
 
   public void addMemoryRange(MemoryRange memoryRange) {
     for (MemoryRange loadMemoryRange : loadMemoryRanges) {
+      if (loadMemoryRange.getStartAddress() == memoryRange.getStartAddress()
+          && loadMemoryRange.getEndAddress() == memoryRange.getEndAddress()) {
+        // Same, nothing to do
+        return;
+      }
+      if(loadMemoryRange.isInRange(memoryRange.getStartAddress(), memoryRange.getEndAddress())) {
+        // Fuse
+        loadMemoryRange.setStartAddress(Math.min(loadMemoryRange.getStartAddress(), memoryRange.getStartAddress()));
+        loadMemoryRange.setEndAddress(Math.max(loadMemoryRange.getEndAddress(), memoryRange.getEndAddress()));
+        return;
+      }
       if (loadMemoryRange.getEndAddress() + 1 == memoryRange.getStartAddress()) {
-        // fuse
+        // We are the next block, extend
         loadMemoryRange.setEndAddress(memoryRange.getEndAddress());
         return;
       }
