@@ -1,5 +1,6 @@
 package spice86.emulator.interrupthandlers.dos;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -74,12 +75,15 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult setCurrentDir(String currentDir) {
-    this.currentDir = toHostFileName(currentDir);
+    this.currentDir = toHostFileName(currentDir, false);
     return DosFileOperationResult.noValue();
   }
 
   public DosFileOperationResult createFileUsingHandle(String fileName, int fileAttribute) {
-    String hostFileName = toHostFileName(fileName);
+    String hostFileName = toHostFileName(fileName, true);
+    if (hostFileName == null) {
+      return fileNotFoundError(fileName, "Could not find parent of {} so cannot create file.");
+    }
     LOGGER.info("Creating file {} with attribute {}", hostFileName, fileAttribute);
 
     Path path = Paths.get(hostFileName);
@@ -95,7 +99,10 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult openFile(String fileName, int rwAccessMode) {
-    String hostFileName = toHostFileName(fileName);
+    String hostFileName = toHostFileName(fileName, false);
+    if (hostFileName == null) {
+      return this.fileNotFoundError(fileName);
+    }
     String openMode = FILE_OPEN_MODE.get(rwAccessMode);
     if (LOGGER.isInfoEnabled()) {
       LOGGER.info("Opening file {} with mode {}", hostFileName, openMode);
@@ -200,7 +207,7 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult findFirstMatchingFile(String fileSpec) {
-    String hostSearchSpec = toHostFileName(fileSpec);
+    String hostSearchSpec = toHostFileName(fileSpec, false);
     currentMatchingFileSearchFolder = hostSearchSpec.substring(0, hostSearchSpec.lastIndexOf('/') + 1);
     currentMatchingFileSearchSpec = hostSearchSpec.replace(currentMatchingFileSearchFolder, "").toLowerCase();
     try (Stream<Path> pathes = Files.walk(Paths.get(currentMatchingFileSearchFolder))) {
@@ -218,28 +225,29 @@ public class DosFileManager {
   public DosFileOperationResult findNextMatchingFile() {
     if (matchingFilesIterator == null) {
       LOGGER.warn("No search was done");
-      return DosFileOperationResult.error(0x02);
+      return fileNotFoundError(null);
     }
     if (!matchingFilesIterator.hasNext()) {
       LOGGER.warn("No more files matching {} in path {}", currentMatchingFileSearchSpec,
           currentMatchingFileSearchFolder);
-      return DosFileOperationResult.error(0x02);
+      return fileNotFoundError(null);
     }
     Path matching = matchingFilesIterator.next();
     try {
       updateDTAFromFile(matching);
     } catch (IOException e) {
       LOGGER.warn("Error while getting attributes.");
-      return DosFileOperationResult.error(0x02);
+      return fileNotFoundError(null);
     }
     return DosFileOperationResult.noValue();
   }
 
   /**
    * @param fileSpec
-   *          a filename with ? when any character can match
+   *          a filename with ? when any character can match. Case is insensitive
    * @param item
-   * @return
+   *          a path from which the file to match will be extracted
+   * @return true if it matched, false otherwise
    */
   private boolean matchesSpec(String fileSpec, Path item) {
     if (Files.isDirectory(item)) {
@@ -309,6 +317,17 @@ public class DosFileManager {
     return (int)newOffset;
   }
 
+  private DosFileOperationResult fileNotFoundError(String fileName) {
+    return fileNotFoundError(fileName, "File {} not found!");
+  }
+
+  private DosFileOperationResult fileNotFoundError(String fileName, String message) {
+    if (fileName != null) {
+      LOGGER.warn(message, fileName);
+    }
+    return DosFileOperationResult.error(0x02);
+  }
+
   private DosFileOperationResult noFreeHandleError() {
     LOGGER.warn("Could not find a free handle");
     return DosFileOperationResult.error(0x04);
@@ -338,6 +357,10 @@ public class DosFileManager {
   }
 
   private DosFileOperationResult openFileInternal(String fileName, String hostFileName, String openMode) {
+    if (hostFileName == null) {
+      // Not found
+      return fileNotFoundError(fileName);
+    }
     Integer freeIndex = findNextFreeFileIndex();
     if (freeIndex == null) {
       return noFreeHandleError();
@@ -347,7 +370,7 @@ public class DosFileManager {
       RandomAccessFile randomAccessFile = new RandomAccessFile(hostFileName, openMode);
       setOpenFile(dosIndex, new OpenFile(fileName, dosIndex, randomAccessFile));
     } catch (FileNotFoundException fne) {
-      return DosFileOperationResult.error(0x02);
+      return fileNotFoundError(fileName);
     }
     return DosFileOperationResult.value16(dosIndex);
   }
@@ -369,7 +392,22 @@ public class DosFileManager {
     return null;
   }
 
-  private String toHostFileName(String dosFileName) {
+  /**
+   * Converts dosFileName to a host file name.<br/>
+   * For this, need to:
+   * <ul>
+   * <li>Prefix either the current folder or the drive folder.</li>
+   * <li>Replace backslashes with slashes</li>
+   * <li>Find case sensitive matches for every path item (since DOS is case insensitive but some OS are not)</li>
+   * </ul>
+   * 
+   * @param dosFileName
+   * @param caseSensitiveOnlyParent
+   *          if true will try to find case sensitive match for only the parent of the file (useful when creating a
+   *          file)
+   * @return the file name in the host file system, or null if nothing was found.
+   */
+  private String toHostFileName(String dosFileName, boolean caseSensitiveOnlyParent) {
     String fileName = dosFileName.replace('\\', '/');
     if (fileName.length() >= 2 && fileName.charAt(1) == ':') {
       fileName = replaceDriveWithHostPath(fileName);
@@ -377,7 +415,39 @@ public class DosFileManager {
       // Same as the exe, prefix with currentDir
       fileName = currentDir + fileName;
     }
-    return fileName.replace("//", "/");
+    fileName = fileName.replace("//", "/");
+    File file = new File(fileName);
+    if (caseSensitiveOnlyParent) {
+      String parent = toCaseSensitiveFileName(file.getParent());
+      if (parent == null) {
+        return null;
+      }
+      return parent + '/' + file.getName();
+    } else {
+      return toCaseSensitiveFileName(fileName);
+    }
+  }
+
+  /**
+   * Attempts to match the given case insensitive path to something in the file system
+   * 
+   * @param caseInsensitivePath
+   * @return a matching path, or null if nothing was found.
+   */
+  private String toCaseSensitiveFileName(String caseInsensitivePath) {
+    File fileToProcess = new File(caseInsensitivePath);
+    if (fileToProcess.exists() || fileToProcess.toPath().getNameCount() == 0) {
+      // file exists or root reached, no need to go further
+      return caseInsensitivePath;
+    }
+    String lowerCaseName = fileToProcess.getName().toLowerCase();
+    String parent = toCaseSensitiveFileName(fileToProcess.getParent());
+    try (Stream<Path> pathes = Files.walk(Paths.get(parent), 1)) {
+      return pathes.filter(p -> matchesSpec(lowerCaseName, p)).findFirst().map(Path::toString).orElse(null);
+    } catch (IOException e) {
+      LOGGER.warn("Error while checking file {}.", caseInsensitivePath, e);
+    }
+    return null;
   }
 
   private String replaceDriveWithHostPath(String fileName) {

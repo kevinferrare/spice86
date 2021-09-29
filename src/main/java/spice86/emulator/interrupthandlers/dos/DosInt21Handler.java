@@ -54,6 +54,7 @@ public class DosInt21Handler extends InterruptHandler {
     super.dispatchTable.put(0x06, () -> directConsoleIo(true));
     super.dispatchTable.put(0x09, this::printString);
     super.dispatchTable.put(0x0C, this::clearKeyboardBufferAndInvokeKeyboardFunction);
+    super.dispatchTable.put(0x0D, this::diskReset);
     super.dispatchTable.put(0x0E, this::selectDefaultDrive);
     super.dispatchTable.put(0x1A, this::setDiskTransferAddress);
     super.dispatchTable.put(0x19, this::getCurrentDefaultDrive);
@@ -136,8 +137,12 @@ public class DosInt21Handler extends InterruptHandler {
 
   public void clearKeyboardBufferAndInvokeKeyboardFunction() throws UnhandledOperationException {
     int operation = state.getAL();
-    LOGGER.info("CLEAR KEYBOARD AND CALL INT 21 {}", operation);
+    LOGGER.debug("CLEAR KEYBOARD AND CALL INT 21 {}", operation);
     this.run(operation);
+  }
+
+  public void diskReset() {
+    LOGGER.info("DISK RESET (Nothing to do...)");
   }
 
   public void selectDefaultDrive() {
