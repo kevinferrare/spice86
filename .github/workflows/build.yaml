@@ -21,8 +21,10 @@ jobs:
         java-version: 17
         distribution: zulu
 
-    # Determine next version to build. New version is in variable new_tag
+    # Determine next version to build. New version is in variable new_tag. Only for main branch as dependabot pull requests cannot create tags:
+    # https://github.blog/changelog/2021-02-19-github-actions-workflows-triggered-by-dependabot-prs-will-run-with-read-only-permissions/
     - name: Determine new version
+      if: github.ref == 'refs/heads/main'
       id: versioning
       uses: anothrNick/github-tag-action@1.36.0
       env:
@@ -33,7 +35,8 @@ jobs:
         DRY_RUN: false
 
     # Sets the versions in the pom so that the generated artifacts are not -SNAPSHOT, build and publish
-    - name: Build Maven
+    - name: Build Maven and deploy
+      if: github.ref == 'refs/heads/main'
       env:
         VERSION: ${{ steps.versioning.outputs.new_tag }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,3 +44,9 @@ jobs:
         mvn -B versions:set -DnewVersion=${VERSION} &> /dev/null
         mvn -B clean install
         mvn -B deploy
+
+    # When on a branch, do not deploy since no tag has been created
+    - name: Build Maven without deploy
+      if: github.ref != 'refs/heads/main'
+      run: |
+        mvn -B clean verify
