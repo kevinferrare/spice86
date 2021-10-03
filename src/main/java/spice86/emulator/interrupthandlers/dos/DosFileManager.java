@@ -75,12 +75,12 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult setCurrentDir(String currentDir) {
-    this.currentDir = toHostFileName(currentDir, false);
+    this.currentDir = toHostCaseSensitiveFileName(currentDir, false);
     return DosFileOperationResult.noValue();
   }
 
   public DosFileOperationResult createFileUsingHandle(String fileName, int fileAttribute) {
-    String hostFileName = toHostFileName(fileName, true);
+    String hostFileName = toHostCaseSensitiveFileName(fileName, true);
     if (hostFileName == null) {
       return fileNotFoundError(fileName, "Could not find parent of {} so cannot create file.");
     }
@@ -99,7 +99,7 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult openFile(String fileName, int rwAccessMode) {
-    String hostFileName = toHostFileName(fileName, false);
+    String hostFileName = toHostCaseSensitiveFileName(fileName, false);
     if (hostFileName == null) {
       return this.fileNotFoundError(fileName);
     }
@@ -207,7 +207,7 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult findFirstMatchingFile(String fileSpec) {
-    String hostSearchSpec = toHostFileName(fileSpec, false);
+    String hostSearchSpec = toHostFileName(fileSpec);
     currentMatchingFileSearchFolder = hostSearchSpec.substring(0, hostSearchSpec.lastIndexOf('/') + 1);
     currentMatchingFileSearchSpec = hostSearchSpec.replace(currentMatchingFileSearchFolder, "").toLowerCase();
     try (Stream<Path> pathes = Files.walk(Paths.get(currentMatchingFileSearchFolder))) {
@@ -407,17 +407,10 @@ public class DosFileManager {
    *          file)
    * @return the file name in the host file system, or null if nothing was found.
    */
-  private String toHostFileName(String dosFileName, boolean caseSensitiveOnlyParent) {
-    String fileName = dosFileName.replace('\\', '/');
-    if (fileName.length() >= 2 && fileName.charAt(1) == ':') {
-      fileName = replaceDriveWithHostPath(fileName);
-    } else {
-      // Same as the exe, prefix with currentDir
-      fileName = currentDir + fileName;
-    }
-    fileName = fileName.replace("//", "/");
-    File file = new File(fileName);
+  private String toHostCaseSensitiveFileName(String dosFileName, boolean caseSensitiveOnlyParent) {
+    String fileName = toHostFileName(dosFileName);
     if (caseSensitiveOnlyParent) {
+      File file = new File(fileName);
       String parent = toCaseSensitiveFileName(file.getParent());
       if (parent == null) {
         return null;
@@ -426,6 +419,25 @@ public class DosFileManager {
     } else {
       return toCaseSensitiveFileName(fileName);
     }
+  }
+
+  /**
+   * Prefixes the given filename by either the mapped drive folder or the current folder depending on whether there is
+   * a Drive in the filename or not.<br/>
+   * Does not convert to case sensitive filename.
+   * 
+   * @param dosFileName
+   * @return
+   */
+  private String toHostFileName(String dosFileName) {
+    String fileName = dosFileName.replace('\\', '/');
+    if (fileName.length() >= 2 && fileName.charAt(1) == ':') {
+      fileName = replaceDriveWithHostPath(fileName);
+    } else {
+      // Same as the exe, prefix with currentDir
+      fileName = currentDir + fileName;
+    }
+    return fileName.replace("//", "/");
   }
 
   /**
