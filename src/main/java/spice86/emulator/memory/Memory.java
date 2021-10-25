@@ -3,11 +3,13 @@ package spice86.emulator.memory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 
 import spice86.emulator.errors.UnrecoverableException;
 import spice86.emulator.machine.breakpoint.BreakPoint;
 import spice86.emulator.machine.breakpoint.BreakPointHolder;
+import spice86.utils.ConvertUtils;
 
 /**
  * Addressable memory of the machine.
@@ -58,16 +60,11 @@ public class Memory {
   }
 
   public void memCopy(int sourceAddress, int destinationAddress, int length) {
-    for (int i = 0; i < length; i++) {
-      int value = this.getUint8(sourceAddress + i);
-      this.setUint8(destinationAddress + i, value);
-    }
+    System.arraycopy(physicalMemory, sourceAddress, physicalMemory, destinationAddress, length);
   }
 
   public void memset(int address, int value, int length) {
-    for (int i = 0; i < length; i++) {
-      this.setUint8(address + i, value);
-    }
+    Arrays.fill(physicalMemory, address, address + length, ConvertUtils.uint8b(value));
   }
 
   public int getUint8(int addr) {

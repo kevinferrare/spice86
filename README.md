@@ -38,9 +38,10 @@ java -jar spice86-1.0.jar file.exe --gdbPort=10000
 
 Spice86 will wait for GDB to connect before starting execution so that you can setup breakpoints and so on.
 
-Here is then how to connect from GDB:
+Here is how to connect from GDB command line client and how to set the architecture:
 ```
 (gdb) target remote localhost:10000
+(gdb) set architecture i8086
 ```
 
 ### Vanilla GDB
