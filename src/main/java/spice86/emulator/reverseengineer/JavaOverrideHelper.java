@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import spice86.emulator.cpu.Cpu;
+import spice86.emulator.cpu.Stack;
 import spice86.emulator.cpu.State;
 import spice86.emulator.errors.UnrecoverableException;
 import spice86.emulator.function.FunctionInformation;
@@ -29,6 +30,7 @@ public class JavaOverrideHelper {
   protected State state;
   protected Cpu cpu;
   protected Memory memory;
+  protected Stack stack;
 
   public JavaOverrideHelper(Map<SegmentedAddress, FunctionInformation> functionInformations, String prefix,
       Machine machine) {
@@ -39,6 +41,7 @@ public class JavaOverrideHelper {
     this.cpu = machine.getCpu();
     this.memory = machine.getMemory();
     this.state = cpu.getState();
+    this.stack = cpu.getStack();
   }
 
   public Runnable nearRet() {

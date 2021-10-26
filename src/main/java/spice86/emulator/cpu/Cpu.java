@@ -64,6 +64,7 @@ public class Cpu {
   private Memory memory;
   private ModRM modRM;
   private Alu alu;
+  private Stack stack;
   private CallbackHandler callbackHandler;
   private IOPortDispatcher ioPortDispatcher;
   private FunctionHandler functionHandler;
@@ -86,6 +87,7 @@ public class Cpu {
     this.memory = machine.getMemory();
     this.state = new State();
     this.alu = new Alu(state);
+    this.stack = new Stack(memory, state);
     this.modRM = new ModRM(machine, this);
     this.functionHandler = new FunctionHandler();
     this.functionHandlerInExternalInterrupt = new FunctionHandler();
@@ -98,6 +100,10 @@ public class Cpu {
 
   public Alu getAlu() {
     return alu;
+  }
+
+  public Stack getStack() {
+    return stack;
   }
 
   public boolean isRunning() {
@@ -308,11 +314,11 @@ public class Cpu {
       }
       case 0x06 -> {
         setCurrentInstructionName(() -> "PUSH ES");
-        push(state.getES());
+        stack.push(state.getES());
       }
       case 0x07 -> {
         setCurrentInstructionName(() -> "POP ES");
-        state.setES(pop());
+        state.setES(stack.pop());
       }
       case 0x08 -> {
         setCurrentInstructionName(() -> "OR rmb rb");
@@ -344,7 +350,7 @@ public class Cpu {
       }
       case 0x0E -> {
         setCurrentInstructionName(() -> "PUSH CS");
-        push(state.getCS());
+        stack.push(state.getCS());
       }
       case 0x0F -> handleInvalidOpcode(opcode);
       case 0x10 -> {
@@ -377,11 +383,11 @@ public class Cpu {
       }
       case 0x16 -> {
         setCurrentInstructionName(() -> "PUSH SS");
-        push(state.getSS());
+        stack.push(state.getSS());
       }
       case 0x17 -> {
         setCurrentInstructionName(() -> "POP SS");
-        state.setSS(pop());
+        state.setSS(stack.pop());
       }
       case 0x18 -> {
         setCurrentInstructionName(() -> "SBB rmb rb");
@@ -413,11 +419,11 @@ public class Cpu {
       }
       case 0x1E -> {
         setCurrentInstructionName(() -> "PUSH DS");
-        push(state.getDS());
+        stack.push(state.getDS());
       }
       case 0x1F -> {
         setCurrentInstructionName(() -> "POP DS");
-        state.setDS(pop());
+        state.setDS(stack.pop());
       }
       case 0x20 -> {
         setCurrentInstructionName(() -> "AND rmb rb");
@@ -622,45 +628,45 @@ public class Cpu {
       case 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57 -> {
         int regIndex = opcode & REG_INDEX_MASK;
         setCurrentInstructionName(() -> "PUSH " + state.getRegisters().getRegName(regIndex));
-        push(state.getRegisters().getRegister(regIndex));
+        stack.push(state.getRegisters().getRegister(regIndex));
       }
       case 0x58, 0x59, 0x5A, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F -> {
         int regIndex = opcode & REG_INDEX_MASK;
         setCurrentInstructionName(() -> "POP " + state.getRegisters().getRegName(regIndex));
-        state.getRegisters().setRegister(regIndex, pop());
+        state.getRegisters().setRegister(regIndex, stack.pop());
       }
       case 0x60 -> {
         // 80186
         setCurrentInstructionName(() -> "PUSHA");
         int sp = state.getSP();
-        push(state.getAX());
-        push(state.getCX());
-        push(state.getDX());
-        push(state.getBX());
-        push(sp);
-        push(state.getBP());
-        push(state.getSI());
-        push(state.getDI());
+        stack.push(state.getAX());
+        stack.push(state.getCX());
+        stack.push(state.getDX());
+        stack.push(state.getBX());
+        stack.push(sp);
+        stack.push(state.getBP());
+        stack.push(state.getSI());
+        stack.push(state.getDI());
       }
       case 0x61 -> {
         // 80186
         setCurrentInstructionName(() -> "POPA");
-        state.setDI(pop());
-        state.setSI(pop());
-        state.setBP(pop());
+        state.setDI(stack.pop());
+        state.setSI(stack.pop());
+        state.setBP(stack.pop());
         // not restoring SP
-        pop();
-        state.setBX(pop());
-        state.setDX(pop());
-        state.setCX(pop());
-        state.setAX(pop());
+        stack.pop();
+        state.setBX(stack.pop());
+        state.setDX(stack.pop());
+        state.setCX(stack.pop());
+        state.setAX(stack.pop());
       }
       case 0x62, 0x63, 0x64, 0x65, 0x66, 0x67 -> handleInvalidOpcode(opcode);
       case 0x68 -> {
         // 80186
         int value = this.nextUint16();
         setCurrentInstructionName(() -> "PUSH " + ConvertUtils.toHex16(value));
-        push(value);
+        stack.push(value);
       }
       case 0x69 -> {
         modRM.read();
@@ -674,7 +680,7 @@ public class Cpu {
         // sign extend it to 16 bits
         int value = uint16(int8(this.nextUint8()));
         setCurrentInstructionName(() -> "PUSH " + ConvertUtils.toHex16(value));
-        push(value);
+        stack.push(value);
       }
       case 0x6B -> {
         modRM.read();
@@ -753,7 +759,7 @@ public class Cpu {
       case 0x8F -> {
         setCurrentInstructionName(() -> "POP rmw");
         modRM.read();
-        modRM.setRm16(pop());
+        modRM.setRm16(stack.pop());
       }
       case 0x90 -> setCurrentInstructionName(() -> "NOP");
       case 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97 -> {
@@ -788,11 +794,11 @@ public class Cpu {
       case 0x9B -> setCurrentInstructionName(() -> "WAIT");
       case 0x9C -> {
         setCurrentInstructionName(() -> "PUSHF");
-        push(state.getFlags().getFlagRegister());
+        stack.push(state.getFlags().getFlagRegister());
       }
       case 0x9D -> {
         setCurrentInstructionName(() -> "POPF");
-        state.getFlags().setFlagRegister(pop());
+        state.getFlags().setFlagRegister(stack.pop());
       }
       case 0x9E -> {
         setCurrentInstructionName(() -> "SAHF");
@@ -1520,7 +1526,7 @@ public class Cpu {
       }
       case 6 -> {
         setCurrentInstructionName(() -> "PUSH");
-        push(modRM.getRm16());
+        stack.push(modRM.getRm16());
       }
       default -> throw new InvalidGroupIndexException(machine, groupIndex);
     }
@@ -1544,14 +1550,14 @@ public class Cpu {
   }
 
   private void nearCall(int returnIP, int callIP) {
-    push(returnIP);
+    stack.push(returnIP);
     internalIp = callIP;
     handleCall(CallType.NEAR, state.getCS(), returnIP, state.getCS(), callIP);
   }
 
   private void farCall(int returnCS, int returnIP, int targetCS, int targetIP) {
-    push(returnCS);
-    push(returnIP);
+    stack.push(returnCS);
+    stack.push(returnIP);
     state.setCS(targetCS);
     internalIp = targetIP;
     handleCall(CallType.FAR, returnCS, returnIP, targetCS, targetIP);
@@ -1567,14 +1573,14 @@ public class Cpu {
 
   public void nearRet(int numberOfBytesToPop) {
     functionHandlerInUse.ret(CallType.NEAR);
-    internalIp = pop();
+    internalIp = stack.pop();
     state.setSP(numberOfBytesToPop + state.getSP());
   }
 
   public void farRet(int numberOfBytesToPop) {
     functionHandlerInUse.ret(CallType.FAR);
-    internalIp = pop();
-    state.setCS(pop());
+    internalIp = stack.pop();
+    state.setCS(stack.pop());
     state.setSP(numberOfBytesToPop + state.getSP());
   }
 
@@ -1690,18 +1696,6 @@ public class Cpu {
     return MemoryUtils.toPhysicalAddress(state.getES(), state.getDI());
   }
 
-  private void push(int value) {
-    int sp = uint16(state.getSP() - 2);
-    state.setSP(sp);
-    memory.setUint16(state.getStackPhysicalAddress(), value);
-  }
-
-  private int pop() {
-    int res = memory.getUint16(state.getStackPhysicalAddress());
-    state.setSP(state.getSP() + 2);
-    return res;
-  }
-
   private void outb(int port, int val) throws InvalidOperationException {
     if (ioPortDispatcher != null) {
       ioPortDispatcher.outb(uint16(port), uint8(val));
@@ -1741,9 +1735,9 @@ public class Cpu {
       LOGGER.debug("int {} handler found in memory, {}", ConvertUtils.toHex(vectorNumber),
           ConvertUtils.toSegmentedAddressRepresentation(targetCS, targetIP));
     }
-    push(state.getFlags().getFlagRegister());
-    push(returnCS);
-    push(returnIP);
+    stack.push(state.getFlags().getFlagRegister());
+    stack.push(returnCS);
+    stack.push(returnIP);
     state.setInterruptFlag(false);
     internalIp = targetIP;
     state.setCS(targetCS);
@@ -1758,9 +1752,9 @@ public class Cpu {
 
   public void interruptRet() {
     this.functionHandlerInUse.ret(CallType.INTERRUPT);
-    internalIp = pop();
-    state.setCS(pop());
-    state.getFlags().setFlagRegister(pop());
+    internalIp = stack.pop();
+    state.setCS(stack.pop());
+    state.getFlags().setFlagRegister(stack.pop());
     this.functionHandlerInUse = functionHandler;
   }
 
