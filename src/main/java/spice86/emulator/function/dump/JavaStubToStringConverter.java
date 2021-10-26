@@ -3,6 +3,7 @@ package spice86.emulator.function.dump;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import spice86.emulator.function.CallType;
@@ -35,6 +36,8 @@ public class JavaStubToStringConverter extends FunctionInformationToStringConver
       }
       return getNoStubReasonCommentForMethod(functionInformation, reason);
     }
+    List<FunctionInformation> calls = this.getCalls(functionInformation, allFunctions);
+    String callsAsComments = this.getCallsAsComments(calls);
     CallType returnType = returnTypes.get(0);
     String functionName = removeDotsFromFunctionName(functionInformation.getName());
     String functionNameInJava = removeDotsFromFunctionName(functionInformation.generateName());
@@ -45,12 +48,19 @@ public class JavaStubToStringConverter extends FunctionInformationToStringConver
     return MessageFormat.format("""
         // defineFunction({0}, {1}, "{2}", this::{3});
         public Runnable {3}() '{'
-          return {4}Ret();
+        {4}
+          return {5}Ret();
         '}'
         """,
         segment, offset, functionName, functionNameInJava,
         //
+        callsAsComments,
+        //
         retType);
+  }
+
+  private String getCallsAsComments(List<FunctionInformation> calls) {
+    return calls.stream().map(f -> "  // " + f.generateName() + "();").collect(Collectors.joining("\n"));
   }
 
   private String getNoStubReasonCommentForMethod(FunctionInformation functionInformation, String reason) {
