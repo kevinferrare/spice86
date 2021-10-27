@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import spice86.emulator.cpu.Cpu;
 import spice86.emulator.cpu.State;
+import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.Memory;
 import spice86.emulator.memory.SegmentedAddress;
@@ -46,13 +47,13 @@ public class FunctionHandler {
   }
 
   public void icall(CallType callType, int entrySegment, int entryOffset, Integer expectedReturnSegment,
-      Integer expectedReturnOffset, int vectorNumber, boolean recordReturn) {
+      Integer expectedReturnOffset, int vectorNumber, boolean recordReturn) throws InvalidOperationException {
     call(callType, entrySegment, entryOffset, expectedReturnSegment, expectedReturnOffset,
         () -> "interrupt_handler_" + ConvertUtils.toHex(vectorNumber), recordReturn);
   }
 
   public void call(CallType callType, int entrySegment, int entryOffset, Integer expectedReturnSegment,
-      Integer expectedReturnOffset) {
+      Integer expectedReturnOffset) throws InvalidOperationException {
     call(callType, entrySegment, entryOffset, expectedReturnSegment, expectedReturnOffset, null, true);
   }
 
@@ -80,9 +81,10 @@ public class FunctionHandler {
    * @param recordReturn
    *          if true, keep the record in a list for this call. False value would be for external interrupt for which
    *          return addresses change all the time.
+   * @throws InvalidOperationException 
    */
   public void call(CallType callType, int entrySegment, int entryOffset, Integer expectedReturnSegment,
-      Integer expectedReturnOffset, Supplier<String> nameGenerator, boolean recordReturn) {
+      Integer expectedReturnOffset, Supplier<String> nameGenerator, boolean recordReturn) throws InvalidOperationException {
     // Determine caller
     FunctionInformation caller = getFunctionInformation(getCurrentFunctionCall());
     // Characterize current function

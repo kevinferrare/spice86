@@ -41,11 +41,11 @@ public class Midi extends DefaultIOPortHandler {
   }
 
   public void writeData(int value) {
-
+    // Not implemented yet
   }
 
   public void writeCommand(int value) {
-
+    // Not implemented yet
   }
 
   public int readData() {

@@ -35,7 +35,11 @@ public class MemoryBasedDataStructure {
     memory.setUint16(baseAddress + offset, value);
   }
 
-  public MemoryBasedArray getArray(int baseAddress, int start, int length) {
-    return new MemoryBasedArray(memory, baseAddress + start, length);
+  public Uint8Array getUint8Array(int baseAddress, int start, int length) {
+    return new Uint8Array(memory, baseAddress + start, length);
+  }
+
+  public Uint16Array getUint16Array(int baseAddress, int start, int length) {
+    return new Uint16Array(memory, baseAddress + start, length);
   }
 }

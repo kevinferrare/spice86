@@ -54,12 +54,12 @@ public class ProgramExecutor implements java.io.Closeable {
     machine = new Machine(gui, configuration.getInstructionsPerSecond(), configuration.isFailOnUnhandledPort());
     initializeCpu();
     initializeDos(configuration);
-    initializeFunctionHandlers(configuration);
     if (configuration.isInstallInterruptVector()) {
       // Doing this after function Handler init so that custom code there can have a chance to register some callbacks
       // if needed
       machine.installAllCallbacksInInterruptTable();
     }
+    initializeFunctionHandlers(configuration);
     loadFileToRun(configuration);
     startGdbServer(configuration);
   }

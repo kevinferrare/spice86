@@ -199,7 +199,7 @@ public class Cpu {
     state.setIP(internalIp);
   }
 
-  private void handleExternalInterrupt() throws UnhandledOperationException {
+  private void handleExternalInterrupt() throws InvalidOperationException {
     if (externalInterruptVectorNumber == null || !state.getInterruptFlag()) {
       return;
     }
@@ -1401,7 +1401,7 @@ public class Cpu {
     }
   }
 
-  private void handleDivisionError() throws UnhandledOperationException {
+  private void handleDivisionError() throws InvalidOperationException {
     // Reset IP because instruction is not finished (this is how an actual CPU behaves)
     internalIp = state.getIP();
     interrupt(0, false);
@@ -1549,13 +1549,13 @@ public class Cpu {
     state.setCS(cs);
   }
 
-  private void nearCall(int returnIP, int callIP) {
+  private void nearCall(int returnIP, int callIP) throws InvalidOperationException {
     stack.push(returnIP);
     internalIp = callIP;
     handleCall(CallType.NEAR, state.getCS(), returnIP, state.getCS(), callIP);
   }
 
-  private void farCall(int returnCS, int returnIP, int targetCS, int targetIP) {
+  private void farCall(int returnCS, int returnIP, int targetCS, int targetIP) throws InvalidOperationException {
     stack.push(returnCS);
     stack.push(returnIP);
     state.setCS(targetCS);
@@ -1563,7 +1563,7 @@ public class Cpu {
     handleCall(CallType.FAR, returnCS, returnIP, targetCS, targetIP);
   }
 
-  private void handleCall(CallType callType, int returnCS, int returnIP, int targetCS, int targetIP) {
+  private void handleCall(CallType callType, int returnCS, int returnIP, int targetCS, int targetIP) throws InvalidOperationException {
     if (isLoggingEnabled()) {
       LOGGER.debug("CALL {}, will return to {}", ConvertUtils.toSegmentedAddressRepresentation(targetCS, targetIP),
           ConvertUtils.toSegmentedAddressRepresentation(returnCS, returnIP));
@@ -1722,7 +1722,7 @@ public class Cpu {
     return 0;
   }
 
-  private void interrupt(int vectorNumber, boolean external) throws UnhandledOperationException {
+  private void interrupt(int vectorNumber, boolean external) throws InvalidOperationException {
     int targetIP = memory.getUint16(4 * vectorNumber);
     int targetCS = memory.getUint16(4 * vectorNumber + 2);
     if (errorOnUninitializedInterruptHandler && targetCS == 0 && targetIP == 0) {

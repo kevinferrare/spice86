@@ -6,9 +6,11 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import spice86.emulator.callback.CallbackHandler;
 import spice86.emulator.cpu.Cpu;
 import spice86.emulator.cpu.Stack;
 import spice86.emulator.cpu.State;
+import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.errors.UnrecoverableException;
 import spice86.emulator.function.FunctionInformation;
 import spice86.emulator.machine.Machine;
@@ -17,6 +19,8 @@ import spice86.emulator.machine.breakpoint.BreakPointType;
 import spice86.emulator.memory.Memory;
 import spice86.emulator.memory.MemoryUtils;
 import spice86.emulator.memory.SegmentedAddress;
+import spice86.utils.CheckedSupplier;
+import spice86.utils.ConvertUtils;
 
 /**
  * Base class to help re-implement assembly code in java.
@@ -42,6 +46,24 @@ public class JavaOverrideHelper {
     this.memory = machine.getMemory();
     this.state = cpu.getState();
     this.stack = cpu.getStack();
+  }
+
+  /**
+   * Define an override calling the actual callback on each registered callbacks.<br/>
+   * This is to mark as overridable functions that only call provided interrupts
+   */
+  public void setProvidedInterruptHandlersAsOverridden() {
+    CallbackHandler callbackHandler = machine.getCallbackHandler();
+    Map<Integer, SegmentedAddress> callbackAddresses = callbackHandler.getCallbackAddresses();
+    for (Map.Entry<Integer, SegmentedAddress> callbackAddressEnty : callbackAddresses.entrySet()) {
+      int callbackNumber = callbackAddressEnty.getKey();
+      SegmentedAddress callbackAddress = callbackAddressEnty.getValue();
+      defineFunction(callbackAddress.getSegment(), callbackAddress.getOffset(),
+          "provided_interrupt_handler_" + ConvertUtils.toHex(callbackNumber), () -> {
+            callbackHandler.run(callbackNumber);
+            return interruptRet();
+          });
+    }
   }
 
   public Runnable nearRet() {
@@ -71,7 +93,8 @@ public class JavaOverrideHelper {
     this.defineFunction(segment, offset, suffix, null);
   }
 
-  public void defineFunction(int segment, int offset, String suffix, Supplier<Runnable> override) {
+  public void defineFunction(int segment, int offset, String suffix,
+      CheckedSupplier<Runnable, InvalidOperationException> override) {
     SegmentedAddress address = new SegmentedAddress(segment, offset);
     FunctionInformation existingFunctionInformation = functionInformations.get(address);
     String name = prefix + "." + suffix;

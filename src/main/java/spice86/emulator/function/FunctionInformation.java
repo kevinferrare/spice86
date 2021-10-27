@@ -4,9 +4,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
+import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.memory.SegmentedAddress;
+import spice86.utils.CheckedSupplier;
 import spice86.utils.ConvertUtils;
 
 /**
@@ -31,7 +32,7 @@ public class FunctionInformation implements Comparable<FunctionInformation> {
   // Functions that calls this one
   private Set<FunctionInformation> callers = new HashSet<>();
   // Override to execute instead of the assembly
-  private Supplier<Runnable> override;
+  private CheckedSupplier<Runnable, InvalidOperationException> override;
   // Number of times this function was called
   private int calledCount;
 
@@ -40,7 +41,7 @@ public class FunctionInformation implements Comparable<FunctionInformation> {
   }
 
   public FunctionInformation(SegmentedAddress address, String name,
-      Supplier<Runnable> override) {
+      CheckedSupplier<Runnable, InvalidOperationException> override) {
     this.address = address;
     this.name = name;
     this.override = override;
@@ -61,7 +62,7 @@ public class FunctionInformation implements Comparable<FunctionInformation> {
     return override != null;
   }
 
-  public void callOverride() {
+  public void callOverride() throws InvalidOperationException {
     if (hasOverride()) {
       Runnable retHandler = override.get();
       // usually retHandler is a ret when called with a near call / retf when called with a far call / iref when called

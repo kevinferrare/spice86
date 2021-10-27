@@ -1,11 +1,14 @@
 package spice86.emulator.callback;
 
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 
 import spice86.emulator.errors.UnhandledOperationException;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.Memory;
 import spice86.emulator.memory.MemoryUtils;
+import spice86.emulator.memory.SegmentedAddress;
 
 /**
  * Holds a Callback for each callback number and calls it depending on the callback number given.<br/>
@@ -18,6 +21,8 @@ public class CallbackHandler extends IndexBasedDispatcher<Callback> {
   private int callbackHandlerSegment;
   // offset in this segment so that new callbacks are written to a fresh location
   private int offset = 0;
+  // Map of all the callback addresses
+  private Map<Integer, SegmentedAddress> callbackAddresses = new HashMap<>();
 
   public CallbackHandler(Machine machine, int interruptHandlerSegment) {
     this.machine = machine;
@@ -27,6 +32,10 @@ public class CallbackHandler extends IndexBasedDispatcher<Callback> {
 
   public void addCallback(Callback callback) {
     addService(callback.getIndex(), callback);
+  }
+
+  public Map<Integer, SegmentedAddress> getCallbackAddresses() {
+    return callbackAddresses;
   }
 
   @Override
@@ -51,6 +60,7 @@ public class CallbackHandler extends IndexBasedDispatcher<Callback> {
   }
 
   private int writeInterruptCallback(int vectorNumber, int segment, int offset) {
+    callbackAddresses.put(vectorNumber, new SegmentedAddress(segment, offset));
     int address = MemoryUtils.toPhysicalAddress(segment, offset);
     // CALLBACK opcode (custom instruction, FE38 + 16 bits callback number)
     memory.setUint8(address, 0xFE);
