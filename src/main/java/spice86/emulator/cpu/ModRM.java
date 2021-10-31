@@ -4,6 +4,9 @@ import static spice86.utils.ConvertUtils.int16;
 import static spice86.utils.ConvertUtils.int8;
 import static spice86.utils.ConvertUtils.uint16;
 
+import spice86.emulator.function.ValueOperation;
+import spice86.emulator.function.OperandSize;
+import spice86.emulator.function.StaticAddressesRecorder;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.Memory;
 import spice86.emulator.memory.MemoryUtils;
@@ -29,6 +32,7 @@ public class ModRM {
   private final Cpu cpu;
   private final Memory memory;
   private final State state;
+  private final StaticAddressesRecorder staticAddressesRecorder;
 
   private int registerIndex;
   private int registerMemoryIndex;
@@ -43,6 +47,7 @@ public class ModRM {
     this.cpu = cpu;
     this.memory = machine.getMemory();
     this.state = cpu.getState();
+    this.staticAddressesRecorder = cpu.getStaticAddressesRecorder();
   }
 
   public void read() throws InvalidModeException {
@@ -67,7 +72,7 @@ public class ModRM {
     }
     boolean bpForRm6 = mode != 0;
     memoryOffset = uint16(computeOffset(bpForRm6) + disp);
-    memoryAddress = getAddress(computeDefaultSegment(bpForRm6), memoryOffset);
+    memoryAddress = getAddress(computeDefaultSegment(bpForRm6), memoryOffset, registerMemoryIndex == 6);
   }
 
   private int computeDefaultSegment(boolean bpForRm6) throws InvalidModeException {
@@ -100,19 +105,28 @@ public class ModRM {
     };
   }
 
-  public int getAddress(int defaultSegmentRegisterIndex, int offset) {
+  public int getAddress(int defaultSegmentRegisterIndex, int offset, boolean recordAddress) {
     Integer segmentIndex = state.getSegmentOverrideIndex();
     if (segmentIndex == null) {
       segmentIndex = defaultSegmentRegisterIndex;
     }
+    if (recordAddress) {
+      staticAddressesRecorder.addOffset(segmentIndex, offset);
+    }
     int segment = this.state.getSegmentRegisters().getRegister(segmentIndex);
     return MemoryUtils.toPhysicalAddress(segment, offset);
+
+  }
+
+  public int getAddress(int defaultSegmentRegisterIndex, int offset) {
+    return getAddress(defaultSegmentRegisterIndex, offset, false);
   }
 
   public int getRm8() {
     if (memoryAddress == null) {
       return this.state.getRegisters().getRegisterFromHighLowIndex8(registerMemoryIndex);
     }
+    staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.READ, OperandSize.BYTE8);
     return this.memory.getUint8(memoryAddress);
   }
 
@@ -120,6 +134,7 @@ public class ModRM {
     if (memoryAddress == null) {
       this.state.getRegisters().setRegisterFromHighLowIndex8(registerMemoryIndex, value);
     } else {
+      staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.WRITE, OperandSize.BYTE8);
       this.memory.setUint8(memoryAddress, value);
     }
   }
@@ -128,6 +143,7 @@ public class ModRM {
     if (memoryAddress == null) {
       return this.state.getRegisters().getRegister(registerMemoryIndex);
     }
+    staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.READ, OperandSize.WORD16);
     return this.memory.getUint16(memoryAddress);
   }
 
@@ -135,6 +151,7 @@ public class ModRM {
     if (memoryAddress == null) {
       this.state.getRegisters().setRegister(registerMemoryIndex, value);
     } else {
+      staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.WRITE, OperandSize.WORD16);
       this.memory.setUint16(memoryAddress, value);
     }
   }

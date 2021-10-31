@@ -15,19 +15,22 @@ import org.apache.commons.lang3.StringUtils;
 
 import spice86.emulator.function.FunctionHandler;
 import spice86.emulator.function.FunctionInformation;
+import spice86.emulator.function.SegmentRegisterBasedAddress;
+import spice86.emulator.function.StaticAddressesRecorder;
 
 /**
  * Dumps collected function informations to a file
  */
 public class FunctionInformationDumper {
   public void dumpFunctionHandlers(String destinationFilePath, FunctionInformationToStringConverter converter,
-      FunctionHandler... functionHandlers) throws IOException {
+      StaticAddressesRecorder staticAddressesRecorder, FunctionHandler... functionHandlers) throws IOException {
     List<FunctionInformation> functionInformations =
         mergeFunctionHandlers(functionHandlers).toList();
     // Set for search purposes
     Set<FunctionInformation> functionInformationsSet = new HashSet<>(functionInformations);
+    Collection<SegmentRegisterBasedAddress> allGlobals = staticAddressesRecorder.getSegmentRegisterBasedAddress();
     try (PrintWriter printWriter = new PrintWriter(new FileWriter(destinationFilePath))) {
-      String header = converter.getFileHeader();
+      String header = converter.getFileHeader(allGlobals);
       if (StringUtils.isNotEmpty(header)) {
         printWriter.println(header);
       }
@@ -39,6 +42,10 @@ public class FunctionInformationDumper {
         if (StringUtils.isNotEmpty(res)) {
           printWriter.println(res);
         }
+      }
+      String footer = converter.getFileFooter();
+      if (StringUtils.isNotEmpty(footer)) {
+        printWriter.println(footer);
       }
     }
   }

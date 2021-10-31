@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import spice86.emulator.function.FunctionInformation;
 import spice86.emulator.function.FunctionReturn;
+import spice86.emulator.function.SegmentRegisterBasedAddress;
 import spice86.emulator.memory.SegmentedAddress;
 
 /**
@@ -17,12 +18,33 @@ import spice86.emulator.memory.SegmentedAddress;
  */
 public abstract class FunctionInformationToStringConverter {
 
-  public String getFileHeader() {
+  /**
+   * Generates the header for the file.
+   * 
+   * @param allGlobals List of addresses encountered during the execution. Hacky to pass it there, but used by Java stub generator.
+   * @return
+   */
+  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals) {
     return "";
   }
 
-  public abstract String convert(FunctionInformation functionInformation,
-      Set<FunctionInformation> allFunctions);
+  /**
+   * Generates the footer of the file.
+   * 
+   * @return
+   */
+  public String getFileFooter() {
+    return "";
+  }
+
+  /**
+   * Called once per functionInformation.
+   * 
+   * @param functionInformation
+   * @param allFunctions
+   * @return
+   */
+  public abstract String convert(FunctionInformation functionInformation, Set<FunctionInformation> allFunctions);
 
   protected int approximateSize(FunctionInformation functionInformation) {
     List<SegmentedAddress> boundaries = getBoundaries(functionInformation);

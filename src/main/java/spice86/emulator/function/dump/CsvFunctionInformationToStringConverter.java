@@ -6,13 +6,14 @@ import java.util.Map;
 import java.util.Set;
 
 import spice86.emulator.function.FunctionInformation;
+import spice86.emulator.function.SegmentRegisterBasedAddress;
 
 /**
  * Converts FunctionInformation to CSV
  */
 public class CsvFunctionInformationToStringConverter extends FunctionInformationToStringConverter {
   @Override
-  public String getFileHeader() {
+  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals) {
     return generateLine("Name", "Returns", "UnalignedReturns", "Callers", "Called", "Calls", "ApproximateSize",
         "Overridable", "Overriden");
   }
@@ -39,8 +40,12 @@ public class CsvFunctionInformationToStringConverter extends FunctionInformation
     return Integer.toString(collection.size());
   }
 
-  private String generateLine(String name, String returns, String unalignedReturns, String callers, String called,
-      String calls, String approximateSize, String overridable, String overridden) {
+  @SuppressWarnings({
+      // This method has a lot of parameters, but it's there to assure consistency between the header and the values.
+      "java:S107"
+  })
+  private static String generateLine(String name, String returns, String unalignedReturns, String callers,
+      String called, String calls, String approximateSize, String overridable, String overridden) {
     StringBuilder res = new StringBuilder();
     res.append(name);
     res.append(',');

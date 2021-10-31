@@ -26,6 +26,10 @@ public class ConvertUtils {
   public static String toHex16(int value) {
     return String.format("0x%X", uint16(value));
   }
+  
+  public static String toHex16WithoutX(int value) {
+    return String.format("%04X", uint16(value));
+  }
 
   public static String toBin8(int value) {
     return Integer.toBinaryString(uint8(value));

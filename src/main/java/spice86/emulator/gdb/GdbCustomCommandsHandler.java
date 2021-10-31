@@ -66,7 +66,7 @@ public class GdbCustomCommandsHandler {
           new CsvFunctionInformationToStringConverter());
       case "dumpfunctions" -> dumpFunctionWithFormat(args, "FunctionsDetails.txt",
           new DetailedFunctionInformationToStringConverter());
-      case "dumpjavastubs" -> dumpFunctionWithFormat(args, "JavaStubs.txt", new JavaStubToStringConverter());
+      case "dumpjavastubs" -> dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
       case "breakcycles" -> breakCycles(args);
       default -> invalidCommand(originalCommand);
     };
@@ -156,7 +156,8 @@ public class GdbCustomCommandsHandler {
     String fileName = getFirstArgumentOrDefaultFile(args, defaultSuffix);
     return doFileAction(fileName, f -> {
       Cpu cpu = machine.getCpu();
-      new FunctionInformationDumper().dumpFunctionHandlers(f, converter, cpu.getFunctionHandler(),
+      new FunctionInformationDumper().dumpFunctionHandlers(f, converter, cpu.getStaticAddressesRecorder(),
+          cpu.getFunctionHandler(),
           cpu.getFunctionHandlerInExternalInterrupt());
     }, "Error while dumping functions");
   }

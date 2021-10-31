@@ -17,8 +17,11 @@ import org.slf4j.LoggerFactory;
 import spice86.emulator.callback.CallbackHandler;
 import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.errors.UnhandledOperationException;
+import spice86.emulator.function.ValueOperation;
 import spice86.emulator.function.CallType;
 import spice86.emulator.function.FunctionHandler;
+import spice86.emulator.function.OperandSize;
+import spice86.emulator.function.StaticAddressesRecorder;
 import spice86.emulator.ioports.IOPortDispatcher;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.Memory;
@@ -72,6 +75,7 @@ public class Cpu {
   // Not the same depending on whether we are processing an external interrupt or not (call stack is not the same)
   private FunctionHandler functionHandlerInUse;
 
+  private StaticAddressesRecorder staticAddressesRecorder;
   // Value used to read parts of the instruction. CPU uses this internally and adjusts IP after instruction execution is
   // done.
   private int internalIp;
@@ -88,10 +92,11 @@ public class Cpu {
     this.state = new State();
     this.alu = new Alu(state);
     this.stack = new Stack(memory, state);
-    this.modRM = new ModRM(machine, this);
     this.functionHandler = new FunctionHandler();
     this.functionHandlerInExternalInterrupt = new FunctionHandler();
     this.functionHandlerInUse = functionHandler;
+    this.staticAddressesRecorder = new StaticAddressesRecorder(state);
+    this.modRM = new ModRM(machine, this);
   }
 
   public State getState() {
@@ -134,6 +139,10 @@ public class Cpu {
     return functionHandlerInUse;
   }
 
+  public StaticAddressesRecorder getStaticAddressesRecorder() {
+    return staticAddressesRecorder;
+  }
+
   public void setForceLog(boolean forceLog) {
     this.forceLog = forceLog;
   }
@@ -172,6 +181,7 @@ public class Cpu {
 
   public void executeNextInstruction() throws InvalidOperationException {
     internalIp = state.getIP();
+    staticAddressesRecorder.reset();
     String stateString = "";
     if (isLoggingEnabled()) {
       stateString = state.toString();
@@ -194,6 +204,7 @@ public class Cpu {
       LOGGER.debug("After execution of {} {}", instructionName, state);
     }
     state.clearPrefixes();
+    staticAddressesRecorder.commit();
     state.incCycles();
     handleExternalInterrupt();
     state.setIP(internalIp);
@@ -811,18 +822,22 @@ public class Cpu {
       case 0xA0 -> {
         setCurrentInstructionName(() -> "MOV AL moffs8");
         state.setAL(memory.getUint8(getDsNextUint16Address()));
+        staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.READ, OperandSize.BYTE8);
       }
       case 0xA1 -> {
         setCurrentInstructionName(() -> "MOV AX moffs16");
         state.setAX(memory.getUint16(getDsNextUint16Address()));
+        staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.READ, OperandSize.WORD16);
       }
       case 0xA2 -> {
         setCurrentInstructionName(() -> "MOV moffs8 AL");
         memory.setUint8(getDsNextUint16Address(), state.getAL());
+        staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.WRITE, OperandSize.BYTE8);
       }
       case 0xA3 -> {
         setCurrentInstructionName(() -> "MOV moffs16 AX");
         memory.setUint16(getDsNextUint16Address(), state.getAX());
+        staticAddressesRecorder.setCurrentAddressOperation(ValueOperation.WRITE, OperandSize.WORD16);
       }
       case 0xA4, 0xA5, 0xA6, 0xA7 -> processString(opcode);
       case 0xA8 -> {
@@ -1133,7 +1148,7 @@ public class Cpu {
   }
 
   private int getDsNextUint16Address() {
-    return modRM.getAddress(SegmentRegisters.DS_INDEX, nextUint16());
+    return modRM.getAddress(SegmentRegisters.DS_INDEX, nextUint16(), true);
   }
 
   private boolean isStringOpUpdatingFlags(int stringOpCode) {
@@ -1563,7 +1578,8 @@ public class Cpu {
     handleCall(CallType.FAR, returnCS, returnIP, targetCS, targetIP);
   }
 
-  private void handleCall(CallType callType, int returnCS, int returnIP, int targetCS, int targetIP) throws InvalidOperationException {
+  private void handleCall(CallType callType, int returnCS, int returnIP, int targetCS, int targetIP)
+      throws InvalidOperationException {
     if (isLoggingEnabled()) {
       LOGGER.debug("CALL {}, will return to {}", ConvertUtils.toSegmentedAddressRepresentation(targetCS, targetIP),
           ConvertUtils.toSegmentedAddressRepresentation(returnCS, returnIP));
