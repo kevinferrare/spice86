@@ -11,6 +11,7 @@ import spice86.emulator.devices.sound.GravisUltraSound;
 import spice86.emulator.devices.sound.Midi;
 import spice86.emulator.devices.sound.PcSpeaker;
 import spice86.emulator.devices.sound.SoundBlaster;
+import spice86.emulator.devices.timer.CounterConfigurator;
 import spice86.emulator.devices.timer.Timer;
 import spice86.emulator.devices.video.VgaCard;
 import spice86.emulator.errors.InvalidOperationException;
@@ -70,9 +71,9 @@ public class Machine {
 
   private MachineBreakpoints machineBreakpoints;
 
-  public Machine(Gui gui, long instructionsPerSecond, boolean failOnUnhandledPort) {
+  public Machine(Gui gui, CounterConfigurator counterConfigurator, boolean failOnUnhandledPort) {
     this.gui = gui;
-    initHardware(instructionsPerSecond, failOnUnhandledPort);
+    initHardware(counterConfigurator, failOnUnhandledPort);
     initServices();
   }
 
@@ -191,7 +192,7 @@ public class Machine {
     return "null";
   }
 
-  private final void initHardware(long instructionsPerSecond, boolean failOnUnhandledPort) {
+  private final void initHardware(CounterConfigurator counterConfigurator, boolean failOnUnhandledPort) {
     // A full 1MB of addressable memory :)
     memory = new Memory(0x100_000);
 
@@ -212,7 +213,7 @@ public class Machine {
     vgaCard = new VgaCard(this, gui, failOnUnhandledPort);
     register(vgaCard);
 
-    timer = new Timer(this, pic, vgaCard, instructionsPerSecond, failOnUnhandledPort);
+    timer = new Timer(this, pic, vgaCard, counterConfigurator, failOnUnhandledPort);
     register(timer);
 
     keyboard = new Keyboard(this, gui, failOnUnhandledPort);

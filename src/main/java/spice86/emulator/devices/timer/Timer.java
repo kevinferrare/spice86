@@ -30,18 +30,18 @@ public class Timer extends DefaultIOPortHandler {
   private Counter vgaCounter;
   private VgaCard vgaCard;
 
-  public Timer(Machine machine, Pic pic, VgaCard vgaCard,
-      long instructionsPerSecond, boolean failOnUnhandledPort) {
+  public Timer(Machine machine, Pic pic, VgaCard vgaCard, CounterConfigurator counterConfigurator,
+      boolean failOnUnhandledPort) {
     super(machine, failOnUnhandledPort);
     this.pic = pic;
     this.vgaCard = vgaCard;
     this.cpu = machine.getCpu();
     for (int i = 0; i < counters.length; i++) {
-      counters[i] = new Counter(machine, i, instructionsPerSecond);
+      counters[i] = new Counter(machine, i, counterConfigurator.instanciateCounterActivator(cpu.getState()));
     }
-    vgaCounter = new Counter(machine, 4, instructionsPerSecond);
-    // 60fps
-    vgaCounter.setValue((int)(Counter.HARDWARE_FREQUENCY / 60));
+    vgaCounter = new Counter(machine, 4, new TimeCounterActivator(1));
+    // 30fps
+    vgaCounter.setValue((int)(Counter.HARDWARE_FREQUENCY / 30));
   }
 
   public long getNumberOfTicks() {

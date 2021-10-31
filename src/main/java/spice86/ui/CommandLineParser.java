@@ -24,8 +24,6 @@ import spice86.utils.ConvertUtils;
  */
 public class CommandLineParser {
   private static final Logger LOGGER = LoggerFactory.getLogger(CommandLineParser.class);
-
-  private static final int DEFAULT_INSTRUCTIONS_PER_SECOND = 5_000_000;
   private static final int DEFAULT_PROGRAM_START_SEGMENT = 0x01ED;
 
   private String getCDrive(String value) {
@@ -39,11 +37,11 @@ public class CommandLineParser {
     return unixPathValue;
   }
 
-  private long parseInstructionsPerSecondParameter(String value) {
+  private Long parseInstructionsPerSecondParameter(String value) {
     if (NumberUtils.isDigits(value)) {
       return Long.parseLong(value);
     }
-    return DEFAULT_INSTRUCTIONS_PER_SECOND;
+    return null;
   }
 
   private Integer parseInt(String value) {
@@ -111,6 +109,13 @@ public class CommandLineParser {
     return BooleanUtils.isTrue(booleanValue);
   }
 
+  private double parseTimeMultiplier(String value) {
+    if (!NumberUtils.isParsable(value)) {
+      return 1.0;
+    }
+    return Double.parseDouble(value);
+  }
+
   @SuppressWarnings("java:S106")
   public Configuration parseCommandLine(Application.Parameters parameters) {
     Configuration configuration = new Configuration();
@@ -121,35 +126,32 @@ public class CommandLineParser {
               Parameters:
               <path to exe>
               --cDrive=<path to C drive, default is .>
-              --instructionsPerSecond=<number of instructions executed in by the emulator in a second on your machine. Default is \
-              """
-              + DEFAULT_INSTRUCTIONS_PER_SECOND
-              + """
-                  >
-                  --gdbPort=<gdb port, if empty gdb server will not be created. If not empty, application will pause until gdb connects>
-                  --overrideSupplierClassName=<Name of a class in the classpath that will generate the initial function informations. See documentation for more information.>
-                  --useCodeOverride=<true or false> if false it will use the names provided by overrideSupplierClassName but not the code
-                  --programEntryPointSegment=<Segment where to load the program. DOS PSP and MCB will be created before it>
-                  --expectedChecksum=<Hexadecimal string representing the expected checksum of the checksum>
-                  --failOnUnhandledPort=<if true, will fail when encountering an unhandled IO port. Useful to check for unimplemented hardware. false by default.>""");
+              --instructionsPerSecond=<number of instructions that have to be executed executed by the emulator to consider a second passed> if blank will use time based timer.
+              --timeMultiplier=<time multiplier> if >1 will go faster, if <1 will go slower.
+              --gdbPort=<gdb port, if empty gdb server will not be created. If not empty, application will pause until gdb connects>
+              --overrideSupplierClassName=<Name of a class in the classpath that will generate the initial function informations. See documentation for more information.>
+              --useCodeOverride=<true or false> if false it will use the names provided by overrideSupplierClassName but not the code
+              --programEntryPointSegment=<Segment where to load the program. DOS PSP and MCB will be created before it>
+              --expectedChecksum=<Hexadecimal string representing the expected checksum of the checksum>
+              --failOnUnhandledPort=<if true, will fail when encountering an unhandled IO port. Useful to check for unimplemented hardware. false by default.>""");
       return null;
     }
     Map<String, String> commandLineParameters = parameters.getNamed();
     configuration.setcDrive(getCDrive(commandLineParameters.get("cDrive")));
     configuration.setInstructionsPerSecond(
         parseInstructionsPerSecondParameter(commandLineParameters.get("instructionsPerSecond")));
+    configuration.setTimeMultiplier(this.parseTimeMultiplier(commandLineParameters.get("timeMultiplier")));
     configuration.setGdbPort(parseInt(commandLineParameters.get("gdbPort")));
     configuration.setOverrideSupplier(
-        this.parseFunctionInformationSupplierClassName(
-            commandLineParameters.get("overrideSupplierClassName")));
-    configuration
-        .setUseCodeOverride(this.parseUseFunctionOverride(commandLineParameters.get("useCodeOverride")));
+        this.parseFunctionInformationSupplierClassName(commandLineParameters.get("overrideSupplierClassName")));
+    configuration.setUseCodeOverride(this.parseUseFunctionOverride(commandLineParameters.get("useCodeOverride")));
     configuration.setInstallInterruptVector(true);
     configuration.setProgramEntryPointSegment(
         this.parseProgramEntryPointSegment(commandLineParameters.get("programEntryPointSegment")));
     configuration
         .setExpectedChecksum(this.parseExpectedChecksum(commandLineParameters.get("expectedChecksum")));
-    configuration.setFailOnUnhandledPort(this.parseFailOnUnhandledPort(commandLineParameters.get("failOnUnhandledPort")));
+    configuration
+        .setFailOnUnhandledPort(this.parseFailOnUnhandledPort(commandLineParameters.get("failOnUnhandledPort")));
 
     return configuration;
   }
