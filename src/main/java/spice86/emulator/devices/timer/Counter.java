@@ -2,6 +2,9 @@ package spice86.emulator.devices.timer;
 
 import static spice86.utils.ConvertUtils.uint8;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 
 import spice86.emulator.errors.UnhandledOperationException;
@@ -14,6 +17,8 @@ import spice86.emulator.machine.Machine;
  * Some documentation: https://k.lse.epita.fr/data/8254.pdf
  */
 public class Counter {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Counter.class);
+
   public static final long HARDWARE_FREQUENCY = 1_193_182;
   private Machine machine;
   private int index;
@@ -24,16 +29,13 @@ public class Counter {
   private int value;
   private boolean firstByteRead;
   private boolean firstByteWritten;
-  private long lastActivationCycle;
   private long ticks;
+  private CounterActivator activator;
 
-  private long cyclesBetweenActivations;
-  private long instructionsPerSecond;
-
-  public Counter(Machine machine, int index, long instructionsPerSecond) {
+  public Counter(Machine machine, int index, CounterActivator activator) {
     this.machine = machine;
     this.index = index;
-    this.instructionsPerSecond = instructionsPerSecond;
+    this.activator = activator;
     // Default is 18.2 times per second
     updateDesiredFreqency(18);
   }
@@ -147,7 +149,8 @@ public class Counter {
   }
 
   private void updateDesiredFreqency(long desiredFrequency) {
-    cyclesBetweenActivations = this.instructionsPerSecond / desiredFrequency;
+    activator.updateDesiredFreqency(desiredFrequency);
+    LOGGER.info("Updating counter {} frequency to {}.", index, desiredFrequency);
   }
 
   /**
@@ -156,8 +159,7 @@ public class Counter {
    * @return true if latched, false otherwise
    */
   public boolean processActivation(long currentCycles) {
-    if (currentCycles > lastActivationCycle + cyclesBetweenActivations) {
-      lastActivationCycle = currentCycles;
+    if (activator.isActivated()) {
       ticks++;
       return true;
     }

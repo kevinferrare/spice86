@@ -168,7 +168,7 @@ public class MachineTest {
   private Machine execute(String binName) throws InvalidOperationException, IOException, URISyntaxException {
     Configuration configuration = new Configuration();
     // making sure int8 is not going to be triggered during the tests
-    configuration.setInstructionsPerSecond(10000000);
+    configuration.setInstructionsPerSecond(10000000l);
     configuration.setExe(getBinPath(binName));
     try (ProgramExecutor programExecutor = new ProgramExecutor(null, configuration)) {
       Machine machine = programExecutor.getMachine();

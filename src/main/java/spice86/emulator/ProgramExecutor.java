@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import spice86.emulator.cpu.Cpu;
 import spice86.emulator.cpu.State;
+import spice86.emulator.devices.timer.CounterConfigurator;
 import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.errors.UnrecoverableException;
 import spice86.emulator.function.FunctionHandler;
@@ -51,7 +52,8 @@ public class ProgramExecutor implements java.io.Closeable {
   }
 
   private final void createMachine(Gui gui, Configuration configuration) {
-    machine = new Machine(gui, configuration.getInstructionsPerSecond(), configuration.isFailOnUnhandledPort());
+    CounterConfigurator counterConfigurator = new CounterConfigurator(configuration);
+    machine = new Machine(gui, counterConfigurator, configuration.isFailOnUnhandledPort());
     initializeCpu();
     initializeDos(configuration);
     if (configuration.isInstallInterruptVector()) {

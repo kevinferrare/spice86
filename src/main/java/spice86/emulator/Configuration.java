@@ -9,7 +9,8 @@ public class Configuration {
   private String exe;
   private String cDrive;
   // Only for timer
-  private long instructionsPerSecond;
+  private Long instructionsPerSecond;
+  private double timeMultiplier;
   private Integer gdbPort;
   private OverrideSupplier overrideSupplier;
   private boolean useCodeOverride;
@@ -34,12 +35,20 @@ public class Configuration {
     this.cDrive = cDrive;
   }
 
-  public long getInstructionsPerSecond() {
+  public Long getInstructionsPerSecond() {
     return instructionsPerSecond;
   }
 
-  public void setInstructionsPerSecond(long instructionsPerSecond) {
+  public void setInstructionsPerSecond(Long instructionsPerSecond) {
     this.instructionsPerSecond = instructionsPerSecond;
+  }
+
+  public double getTimeMultiplier() {
+    return timeMultiplier;
+  }
+
+  public void setTimeMultiplier(double timeMultiplier) {
+    this.timeMultiplier = timeMultiplier;
   }
 
   public Integer getGdbPort() {

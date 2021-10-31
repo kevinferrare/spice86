@@ -121,6 +121,14 @@ You can also dump the functions as CSV for import and processing in a spreadshee
 ```
 (gdb) monitor dumpfunctionscsv path/to/functions.txt
 ```
+#### Generate Java code
+```
+(gdb) monitor dumpJavaStubs path/to/stub.java
+```
+
+This will generate java source code with:
+- The function calls and how to override them
+- Accessors for global variables (memory bytes accessed via hardcoded address)
 
 #### Special breakpoints
 Break after x emulated CPU Cycles:
@@ -303,14 +311,12 @@ You can copy paste the stub to your code.
 It is possible to provide a C: Drive for emulated DOS functions with the option **--cDrive**. Default is current folder. For some games you may need to set the C drive to the game folder.
 
 ### Time
-The emulated Timer hardware of the PC (Intel 8259) currently only supports measuring time from the number of instructions the emulated CPU did execute.
-
-By default one second is considered to be 5 millions emulated instructions, and this can be changed with the option **--instructionsPerSecond** (adjust it to match your computer speed).
-
-Since time depends on the number of instructions elapsed, timer ticks will become less frequent the more you re-implement your program, this may lower framerate. You can fix by decreasing instructionsPerSecond.
+The emulated Timer hardware of the PC (Intel 8259) supports measuring time from either:
+- The real elapsed time. Speed can be altered with parameter **--timeMultiplier**.
+- The number of instructions the emulated CPU executed. This is the behaviour is activated with parameter **--instructionsPerSecond** and is forced when in GDB mode so that you can debug with peace of mine without the timer triggering.
 
 ### Screen refresh
-Screen is refreshed 60 times per emulated second and each time a VGA retrace wait is detected (see VideoBiosServicesDispatcher::tick3DA).
+Screen is refreshed 30 times per second and each time a VGA retrace wait is detected (see VideoBiosServicesDispatcher::tick3DA).
 
 ### Emulator features
 CPU:
