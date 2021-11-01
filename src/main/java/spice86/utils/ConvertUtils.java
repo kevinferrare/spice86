@@ -26,7 +26,7 @@ public class ConvertUtils {
   public static String toHex16(int value) {
     return String.format("0x%X", uint16(value));
   }
-  
+
   public static String toHex16WithoutX(int value) {
     return String.format("%04X", uint16(value));
   }
@@ -58,6 +58,22 @@ public class ConvertUtils {
 
   public static int toAbsoluteOffset(int physicalAddress) {
     return physicalAddress - (physicalAddress / SEGMENT_SIZE) * SEGMENT_SIZE;
+  }
+
+  public static int readLsb(int value) {
+    return uint8(value);
+  }
+
+  public static int writeLsb(int value, int lsb) {
+    return (value & 0xFF00) | uint8(lsb);
+  }
+
+  public static int readMsb(int value) {
+    return uint8(value >>> 8);
+  }
+
+  public static int writeMsb(int value, int msb) {
+    return (value & 0x00FF) | ((msb << 8) & 0xFF00);
   }
 
   public static int uint8(int value) {

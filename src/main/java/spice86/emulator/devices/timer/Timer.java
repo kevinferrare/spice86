@@ -85,8 +85,8 @@ public class Timer extends DefaultIOPortHandler {
   public void outb(int port, int value) throws InvalidOperationException {
     if (isCounterRegisterPort(port)) {
       Counter counter = getCounterIndexFromPortNumber(port);
-      LOGGER.info("SETTING COUNTER {} to partial value {}", counter.getIndex(), value);
       counter.setValueUsingMode(value);
+      LOGGER.info("SETTING COUNTER {} to partial value {}. {}", counter.getIndex(), value, counter);
       return;
     } else if (port == MODE_COMMAND_REGISTER) {
       int counterIndex = (value >> 6);

@@ -1,13 +1,14 @@
 package spice86.emulator.cpu;
 
 import static spice86.utils.ConvertUtils.uint16;
-import static spice86.utils.ConvertUtils.uint8;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import spice86.utils.ConvertUtils;
 
 /**
  * Holder for a group of registers. Handles various operations like:
@@ -50,22 +51,22 @@ public class RegistersHolder {
   }
 
   public int getRegister8L(int regIndex) {
-    return uint8(getRegister(regIndex));
+    return ConvertUtils.readLsb(getRegister(regIndex));
   }
 
   public void setRegister8L(int regIndex, int value) {
     int currentValue = getRegister(regIndex);
-    int newValue = (currentValue & 0xFF00) | uint8(value);
+    int newValue = ConvertUtils.writeLsb(currentValue, value);
     setRegister(regIndex, newValue);
   }
 
   public int getRegister8H(int regIndex) {
-    return uint8(getRegister(regIndex) >>> 8);
+    return ConvertUtils.readMsb(getRegister(regIndex));
   }
 
   public void setRegister8H(int regIndex, int value) {
     int currentValue = getRegister(regIndex);
-    int newValue = (currentValue & 0x00FF) | (uint16(value << 8));
+    int newValue = ConvertUtils.writeMsb(currentValue, value);
     setRegister(regIndex, newValue);
   }
 

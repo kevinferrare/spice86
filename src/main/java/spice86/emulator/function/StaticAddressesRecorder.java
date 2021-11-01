@@ -11,12 +11,14 @@ import spice86.emulator.cpu.State;
  * Records the addresses accessed in memory and what is done there.
  */
 public class StaticAddressesRecorder {
+  private boolean debugMode;
   private SegmentRegisters segmentRegisters;
   private Map<SegmentRegisterBasedAddress, SegmentRegisterBasedAddress> segmentRegisterBasedAddress = new HashMap<>();
   private SegmentRegisterBasedAddress currentValue;
   private AddressOperation currentAddressOperation;
 
-  public StaticAddressesRecorder(State state) {
+  public StaticAddressesRecorder(State state, boolean debugMode) {
+    this.debugMode = debugMode;
     this.segmentRegisters = state.getSegmentRegisters();
   }
 
@@ -26,7 +28,7 @@ public class StaticAddressesRecorder {
   }
 
   public void commit() {
-    if (currentValue != null && currentAddressOperation != null) {
+    if (debugMode && currentValue != null && currentAddressOperation != null) {
       SegmentRegisterBasedAddress value = segmentRegisterBasedAddress.computeIfAbsent(currentValue, k -> k);
       value.addAddressOperation(currentAddressOperation);
       value.addSegmentValue(segmentRegisters.getRegister(value.getRegisterIndex()));

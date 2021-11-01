@@ -53,7 +53,8 @@ public class ProgramExecutor implements java.io.Closeable {
 
   private final void createMachine(Gui gui, Configuration configuration) {
     CounterConfigurator counterConfigurator = new CounterConfigurator(configuration);
-    machine = new Machine(gui, counterConfigurator, configuration.isFailOnUnhandledPort());
+    boolean debugMode = configuration.getGdbPort() != null;
+    machine = new Machine(gui, counterConfigurator, configuration.isFailOnUnhandledPort(), debugMode);
     initializeCpu();
     initializeDos(configuration);
     if (configuration.isInstallInterruptVector()) {

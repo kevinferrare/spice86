@@ -68,11 +68,12 @@ public class Machine {
   private DosInt20Handler dosInt20Handler;
   private DosInt21Handler dosInt21Handler;
   private MouseInt33Handler mouseInt33Handler;
-
   private MachineBreakpoints machineBreakpoints;
+  private boolean debugMode;
 
-  public Machine(Gui gui, CounterConfigurator counterConfigurator, boolean failOnUnhandledPort) {
+  public Machine(Gui gui, CounterConfigurator counterConfigurator, boolean failOnUnhandledPort, boolean debugMode) {
     this.gui = gui;
+    this.debugMode = debugMode;
     initHardware(counterConfigurator, failOnUnhandledPort);
     initServices();
   }
@@ -196,9 +197,7 @@ public class Machine {
     // A full 1MB of addressable memory :)
     memory = new Memory(0x100_000);
 
-    cpu = new Cpu(this);
-    cpu.getFunctionHandler().setMachine(this);
-    cpu.getFunctionHandlerInExternalInterrupt().setMachine(this);
+    cpu = new Cpu(this, debugMode);
 
     // Breakpoints
     machineBreakpoints = new MachineBreakpoints(this);
@@ -295,7 +294,9 @@ public class Machine {
 
   private void runLoop() throws InvalidOperationException {
     while (cpu.isRunning()) {
-      machineBreakpoints.checkBreakPoint();
+      if (debugMode) {
+        machineBreakpoints.checkBreakPoint();
+      }
       cpu.executeNextInstruction();
       timer.tick();
     }
