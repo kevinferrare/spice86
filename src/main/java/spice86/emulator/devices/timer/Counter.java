@@ -1,7 +1,5 @@
 package spice86.emulator.devices.timer;
 
-import static spice86.utils.ConvertUtils.uint8;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +7,7 @@ import com.google.gson.Gson;
 
 import spice86.emulator.errors.UnhandledOperationException;
 import spice86.emulator.machine.Machine;
+import spice86.utils.ConvertUtils;
 
 /**
  * Counter of the PIT.<br/>
@@ -20,7 +19,10 @@ public class Counter {
   private static final Logger LOGGER = LoggerFactory.getLogger(Counter.class);
 
   public static final long HARDWARE_FREQUENCY = 1_193_182;
-  private Machine machine;
+  @SuppressWarnings({
+      // Using transient to prevent GSon from serializing it
+      "java:S2065" })
+  private transient Machine machine;
   private int index;
   // Some programs don't set it so let's use by default the simplest mode
   private int readWritePolicy = 1;
@@ -129,23 +131,27 @@ public class Counter {
   }
 
   private int readLsb() {
-    return uint8(value);
+    return ConvertUtils.readLsb(value);
   }
 
   private void writeLsb(int partialValue) {
-    value |= uint8(partialValue);
+    value = ConvertUtils.writeLsb(value, partialValue);
   }
 
   private int readMsb() {
-    return (value & 0xFF00) >>> 16;
+    return ConvertUtils.readMsb(value);
   }
 
   private void writeMsb(int partialValue) {
-    value |= (partialValue << 8) & 0xFF00;
+    value = ConvertUtils.writeMsb(value, partialValue);
   }
 
   private void onValueWrite() {
-    updateDesiredFreqency(HARDWARE_FREQUENCY / value);
+    if (value == 0) {
+      updateDesiredFreqency(HARDWARE_FREQUENCY / 0x10000);
+    } else {
+      updateDesiredFreqency(HARDWARE_FREQUENCY / value);
+    }
   }
 
   private void updateDesiredFreqency(long desiredFrequency) {

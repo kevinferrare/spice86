@@ -86,16 +86,16 @@ public class Cpu {
   private boolean errorOnUninitializedInterruptHandler;
   private Boolean forceLog;
 
-  public Cpu(Machine machine) {
+  public Cpu(Machine machine, boolean debugMode) {
     this.machine = machine;
     this.memory = machine.getMemory();
     this.state = new State();
     this.alu = new Alu(state);
     this.stack = new Stack(memory, state);
-    this.functionHandler = new FunctionHandler();
-    this.functionHandlerInExternalInterrupt = new FunctionHandler();
+    this.functionHandler = new FunctionHandler(machine, debugMode);
+    this.functionHandlerInExternalInterrupt = new FunctionHandler(machine, debugMode);
     this.functionHandlerInUse = functionHandler;
-    this.staticAddressesRecorder = new StaticAddressesRecorder(state);
+    this.staticAddressesRecorder = new StaticAddressesRecorder(state, debugMode);
     this.modRM = new ModRM(machine, this);
   }
 

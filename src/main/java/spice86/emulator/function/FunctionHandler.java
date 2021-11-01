@@ -29,9 +29,11 @@ public class FunctionHandler {
   private Deque<FunctionCall> callerStack = new ArrayDeque<>();
   private Map<SegmentedAddress, FunctionInformation> functionInformations = new HashMap<>();
   private boolean useCodeOverride;
+  private boolean debugMode;
 
-  public void setMachine(Machine machine) {
+  public FunctionHandler(Machine machine, boolean debugMode) {
     this.machine = machine;
+    this.debugMode = debugMode;
   }
 
   public void setFunctionInformations(Map<SegmentedAddress, FunctionInformation> functionInformations) {
@@ -81,50 +83,55 @@ public class FunctionHandler {
    * @param recordReturn
    *          if true, keep the record in a list for this call. False value would be for external interrupt for which
    *          return addresses change all the time.
-   * @throws InvalidOperationException 
+   * @throws InvalidOperationException
    */
   public void call(CallType callType, int entrySegment, int entryOffset, Integer expectedReturnSegment,
-      Integer expectedReturnOffset, Supplier<String> nameGenerator, boolean recordReturn) throws InvalidOperationException {
-    // Determine caller
-    FunctionInformation caller = getFunctionInformation(getCurrentFunctionCall());
-    // Characterize current function
+      Integer expectedReturnOffset, Supplier<String> nameGenerator, boolean recordReturn)
+      throws InvalidOperationException {
     SegmentedAddress entryAddress = new SegmentedAddress(entrySegment, entryOffset);
-    SegmentedAddress expectedReturnAddress = null;
-    if (expectedReturnSegment != null && expectedReturnOffset != null) {
-      expectedReturnAddress = new SegmentedAddress(expectedReturnSegment, expectedReturnOffset);
-    }
-    FunctionCall currentFunctionCall =
-        new FunctionCall(callType, entryAddress, expectedReturnAddress, getCurrentStackAddress(), recordReturn);
-    callerStack.addFirst(currentFunctionCall);
     FunctionInformation currentFunction = functionInformations.computeIfAbsent(entryAddress,
         k -> new FunctionInformation(entryAddress, nameGenerator != null ? nameGenerator.get() : "unknown"));
-    // Do the call
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Calling {} from {}", currentFunction, caller);
+    if (debugMode) {
+      // Determine caller
+      FunctionInformation caller = getFunctionInformation(getCurrentFunctionCall());
+      // Characterize current function
+      SegmentedAddress expectedReturnAddress = null;
+      if (expectedReturnSegment != null && expectedReturnOffset != null) {
+        expectedReturnAddress = new SegmentedAddress(expectedReturnSegment, expectedReturnOffset);
+      }
+      FunctionCall currentFunctionCall =
+          new FunctionCall(callType, entryAddress, expectedReturnAddress, getCurrentStackAddress(), recordReturn);
+      callerStack.addFirst(currentFunctionCall);
+      // Do the call
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Calling {} from {}", currentFunction, caller);
+      }
+      currentFunction.enter(caller);
     }
-    currentFunction.enter(caller);
     if (useCodeOverride) {
       currentFunction.callOverride();
     }
   }
 
   public boolean ret(CallType returnCallType) {
-    FunctionCall currentFunctionCall = callerStack.pollFirst();
-    if (currentFunctionCall == null) {
-      LOGGER.warn("Returning but no call was done before!!");
-      return false;
-    }
-    FunctionInformation currentFunctionInformation = getFunctionInformation(currentFunctionCall);
-    boolean returnAddressAlignedWithCallStack =
-        addReturn(returnCallType, currentFunctionCall, currentFunctionInformation);
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Returning from {} to {}", currentFunctionInformation,
-          getFunctionInformation(getCurrentFunctionCall()));
-    }
+    if (debugMode) {
+      FunctionCall currentFunctionCall = callerStack.pollFirst();
+      if (currentFunctionCall == null) {
+        LOGGER.warn("Returning but no call was done before!!");
+        return false;
+      }
+      FunctionInformation currentFunctionInformation = getFunctionInformation(currentFunctionCall);
+      boolean returnAddressAlignedWithCallStack =
+          addReturn(returnCallType, currentFunctionCall, currentFunctionInformation);
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Returning from {} to {}", currentFunctionInformation,
+            getFunctionInformation(getCurrentFunctionCall()));
+      }
 
-    if (!returnAddressAlignedWithCallStack) {
-      // Put it back in the stack, we did a jump not a return
-      callerStack.addFirst(currentFunctionCall);
+      if (!returnAddressAlignedWithCallStack) {
+        // Put it back in the stack, we did a jump not a return
+        callerStack.addFirst(currentFunctionCall);
+      }
     }
     return true;
   }
