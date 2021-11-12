@@ -109,15 +109,6 @@ public class FunctionInformation implements Comparable<FunctionInformation> {
     return callers;
   }
 
-  public String generateName() {
-    String res = name + "_" + ConvertUtils.toHex(address.getSegment()) + "_" + ConvertUtils.toHex(address.getOffset())
-        + "_" + ConvertUtils.toHex(address.toPhysical());
-    if (override != null) {
-      res += " overriden";
-    }
-    return res;
-  }
-
   @Override
   public int hashCode() {
     return address.hashCode();
@@ -138,6 +129,6 @@ public class FunctionInformation implements Comparable<FunctionInformation> {
 
   @Override
   public String toString() {
-    return generateName();
+    return this.name + "_" + ConvertUtils.toJavaStringWithPhysical(this.address);
   }
 }

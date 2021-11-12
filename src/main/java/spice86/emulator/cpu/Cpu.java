@@ -888,7 +888,7 @@ public class Cpu {
         modRM.read();
         modRM.setR16(memory.getUint16(modRM.getMemoryAddress()));
         int value = memory.getUint16(modRM.getMemoryAddress() + 2);
-
+        this.getStaticAddressesRecorder().setCurrentAddressOperation(ValueOperation.READ, OperandSize.DWORD32);
         if (opcode == 0xC4) {
           // LES
           setCurrentInstructionName(() -> "LES rw md");
@@ -1525,6 +1525,7 @@ public class Cpu {
       case 3 -> {
         setCurrentInstructionName(() -> "FAR CALL");
         int ipAddress = modRM.getMemoryAddress();
+        this.getStaticAddressesRecorder().setCurrentAddressOperation(ValueOperation.READ, OperandSize.DWORD32);
         int ip = memory.getUint16(ipAddress);
         int cs = memory.getUint16(ipAddress + 2);
         farCall(state.getCS(), internalIp, cs, ip);
@@ -1535,6 +1536,7 @@ public class Cpu {
       }
       case 5 -> {
         int ipAddress = modRM.getMemoryAddress();
+        this.getStaticAddressesRecorder().setCurrentAddressOperation(ValueOperation.READ, OperandSize.DWORD32);
         int ip = memory.getUint16(ipAddress);
         int cs = memory.getUint16(ipAddress + 2);
         jumpFar(cs, ip);

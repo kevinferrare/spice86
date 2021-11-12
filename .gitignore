@@ -2,6 +2,8 @@
 .project
 .settings/
 target/
+.idea
+*.iml
 *.log
 logback.out.xml
 
@@ -10,3 +12,8 @@ pom.xml.releaseBackup
 pom.xml.tag
 release.properties
 dependency-reduced-pom.xml
+
+spice86dumpFunctions.csv
+spice86dumpFunctionsDetails.txt
+spice86dumpJavaStubs.java
+spice86dumpMemoryDump.bin

@@ -17,6 +17,7 @@ import spice86.emulator.function.FunctionHandler;
 import spice86.emulator.function.FunctionInformation;
 import spice86.emulator.function.SegmentRegisterBasedAddress;
 import spice86.emulator.function.StaticAddressesRecorder;
+import spice86.emulator.memory.SegmentedAddress;
 
 /**
  * Dumps collected function informations to a file
@@ -29,8 +30,9 @@ public class FunctionInformationDumper {
     // Set for search purposes
     Set<FunctionInformation> functionInformationsSet = new HashSet<>(functionInformations);
     Collection<SegmentRegisterBasedAddress> allGlobals = staticAddressesRecorder.getSegmentRegisterBasedAddress();
+    Set<SegmentedAddress> whiteListOfSegmentForOffset = staticAddressesRecorder.getWhiteListOfSegmentForOffset();
     try (PrintWriter printWriter = new PrintWriter(new FileWriter(destinationFilePath))) {
-      String header = converter.getFileHeader(allGlobals);
+      String header = converter.getFileHeader(allGlobals, whiteListOfSegmentForOffset);
       if (StringUtils.isNotEmpty(header)) {
         printWriter.println(header);
       }

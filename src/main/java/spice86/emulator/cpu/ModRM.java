@@ -111,7 +111,7 @@ public class ModRM {
       segmentIndex = defaultSegmentRegisterIndex;
     }
     if (recordAddress) {
-      staticAddressesRecorder.addOffset(segmentIndex, offset);
+      staticAddressesRecorder.setCurrentValue(segmentIndex, offset);
     }
     int segment = this.state.getSegmentRegisters().getRegister(segmentIndex);
     return MemoryUtils.toPhysicalAddress(segment, offset);

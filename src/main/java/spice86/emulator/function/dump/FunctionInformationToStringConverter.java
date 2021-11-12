@@ -6,12 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import spice86.emulator.function.FunctionInformation;
 import spice86.emulator.function.FunctionReturn;
 import spice86.emulator.function.SegmentRegisterBasedAddress;
 import spice86.emulator.memory.SegmentedAddress;
+import spice86.utils.ConvertUtils;
 
 /**
  * Base class for FunctionInformation to String conversion. Each subclass could implement a custom format.
@@ -22,9 +24,10 @@ public abstract class FunctionInformationToStringConverter {
    * Generates the header for the file.
    * 
    * @param allGlobals List of addresses encountered during the execution. Hacky to pass it there, but used by Java stub generator.
+   * @param whiteListOfSegmentForOffset Set of segmented addresses for which nothing should be displayed if the offset matches but not the segmen 
    * @return
    */
-  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals) {
+  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals, Set<SegmentedAddress> whiteListOfSegmentForOffset) {
     return "";
   }
 
@@ -88,5 +91,25 @@ public abstract class FunctionInformationToStringConverter {
 
   protected <K, V> Map<K, V> sort(Map<K, V> map) {
     return new TreeMap<>(map);
+  }
+
+  protected String joinNewLine(Stream<String> stream) {
+    return stream.collect(Collectors.joining("\n"));
+  }
+
+  protected String toJavaName(FunctionInformation functionInformation, boolean dots) {
+    String nameToUse = functionInformation.getName();
+    if(!dots) {
+      nameToUse = removeDotsFromFunctionName(nameToUse);
+    }
+    return nameToUse + "_" + ConvertUtils.toJavaStringWithPhysical(functionInformation.getAddress());
+  }
+
+  protected String removeDotsFromFunctionName(String name) {
+    String[] functionNameSplit = name.split("\\.");
+    if (functionNameSplit.length > 1) {
+      return functionNameSplit[functionNameSplit.length - 1];
+    }
+    return name;
   }
 }

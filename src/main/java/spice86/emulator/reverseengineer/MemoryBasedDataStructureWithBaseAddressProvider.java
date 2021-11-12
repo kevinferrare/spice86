@@ -30,6 +30,14 @@ public abstract class MemoryBasedDataStructureWithBaseAddressProvider extends Me
     super.setUint16(getBaseAddress(), offset, value);
   }
 
+  public int getUint32(int offset) {
+    return super.getUint32(getBaseAddress(), offset);
+  }
+
+  public void setUint32(int offset, int value) {
+    super.setUint32(getBaseAddress(), offset, value);
+  }
+
   public Uint8Array getUint8Array(int start, int length) {
     return super.getUint8Array(getBaseAddress(), start, length);
   }

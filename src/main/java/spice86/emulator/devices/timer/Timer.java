@@ -100,7 +100,7 @@ public class Timer extends DefaultIOPortHandler {
     super.outb(port, value);
   }
 
-  private Counter getCounter(int counterIndex) throws InvalidCounterIndexException {
+  public Counter getCounter(int counterIndex) throws InvalidCounterIndexException {
     if (counterIndex > counters.length || counterIndex < 0) {
       throw new InvalidCounterIndexException(machine, counterIndex);
     }
