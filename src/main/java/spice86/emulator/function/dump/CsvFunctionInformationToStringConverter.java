@@ -7,13 +7,14 @@ import java.util.Set;
 
 import spice86.emulator.function.FunctionInformation;
 import spice86.emulator.function.SegmentRegisterBasedAddress;
+import spice86.emulator.memory.SegmentedAddress;
 
 /**
  * Converts FunctionInformation to CSV
  */
 public class CsvFunctionInformationToStringConverter extends FunctionInformationToStringConverter {
   @Override
-  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals) {
+  public String getFileHeader(Collection<SegmentRegisterBasedAddress> allGlobals, Set<SegmentedAddress> whiteListOfSegmentForOffset) {
     return generateLine("Name", "Returns", "UnalignedReturns", "Callers", "Called", "Calls", "ApproximateSize",
         "Overridable", "Overriden");
   }
@@ -21,7 +22,7 @@ public class CsvFunctionInformationToStringConverter extends FunctionInformation
   @Override
   public String convert(FunctionInformation functionInformation, Set<FunctionInformation> allFunctions) {
     List<FunctionInformation> calls = getCalls(functionInformation, allFunctions);
-    return generateLine(functionInformation.toString(),
+    return generateLine(toJavaName(functionInformation, true),
         size(functionInformation.getReturns()),
         size(functionInformation.getUnalignedReturns()),
         size(getCallers(functionInformation)),

@@ -122,7 +122,7 @@ public class GdbCustomCommandsHandler {
         new UnconditionalBreakPoint(BreakPointType.MACHINE_STOP, onBreakpointReached, false);
     machine.getMachineBreakpoints().toggleBreakPoint(breakPoint, true);
     LOGGER.debug("Breakpoint added for end of execution!\n{}", breakPoint);
-    return gdbIo.generateResponse("OK");
+    return gdbIo.generateMessageToDisplayResponse("Breakpoint added for end of execution.");
   }
 
   private String callStack() {
@@ -139,11 +139,14 @@ public class GdbCustomCommandsHandler {
     }
     long cyclesToWait = Long.parseLong(cyclesToWaitString);
     long currentCycles = machine.getCpu().getState().getCycles();
+    long cyclesBreak = currentCycles + cyclesToWait;
     BreakPoint breakPoint =
-        new BreakPoint(BreakPointType.CYCLES, currentCycles + cyclesToWait, onBreakpointReached, true);
+        new BreakPoint(BreakPointType.CYCLES, cyclesBreak, onBreakpointReached, true);
     machine.getMachineBreakpoints().toggleBreakPoint(breakPoint, true);
     LOGGER.debug("Breakpoint added for cycles!\n{}", breakPoint);
-    return gdbIo.generateResponse("OK");
+    return gdbIo.generateMessageToDisplayResponse(
+        "Breakpoint added for cycles. Current cycles is " + currentCycles + ". Will wait for " + cyclesToWait
+            + ". Will stop at " + cyclesBreak);
   }
 
   private String dumpMemory(String[] args) {

@@ -3,6 +3,7 @@ package spice86.utils;
 import java.nio.charset.StandardCharsets;
 
 import spice86.emulator.memory.MemoryUtils;
+import spice86.emulator.memory.SegmentedAddress;
 
 public class ConvertUtils {
   private static final int SEGMENT_SIZE = 0x10000;
@@ -29,6 +30,15 @@ public class ConvertUtils {
 
   public static String toHex16WithoutX(int value) {
     return String.format("%04X", uint16(value));
+  }
+
+  public static String toJavaStringWithPhysical(SegmentedAddress address) {
+    return toHex16WithoutX(address.getSegment()) + "_" + toHex16WithoutX(address.getOffset())
+        + "_" + toHex16WithoutX(address.toPhysical());
+  }
+
+  public static String toJavaString(SegmentedAddress address) {
+    return toHex16WithoutX(address.getSegment()) + "_" + toHex16WithoutX(address.getOffset());
   }
 
   public static String toBin8(int value) {

@@ -13,6 +13,7 @@ import spice86.emulator.cpu.State;
 import spice86.emulator.errors.InvalidOperationException;
 import spice86.emulator.errors.UnrecoverableException;
 import spice86.emulator.function.FunctionInformation;
+import spice86.emulator.function.StaticAddressesRecorder;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.machine.breakpoint.BreakPoint;
 import spice86.emulator.machine.breakpoint.BreakPointType;
@@ -101,13 +102,36 @@ public class JavaOverrideHelper {
     if (existingFunctionInformation != null) {
       String error =
           "There is already a function defined at address " + address + " named "
-              + existingFunctionInformation.getName() + " but you are trying to redefine it with as " + name
+              + existingFunctionInformation.getName() + " but you are trying to redefine it as " + name
               + ". Please check your mappings for duplicates.";
       LOGGER.error(error);
       throw new UnrecoverableException(error);
     }
     FunctionInformation functionInformation = new FunctionInformation(address, name, override);
     functionInformations.put(address, functionInformation);
+  }
+
+  public void defineStaticAddress(int segment, int offset, String name) {
+    defineStaticAddress(segment, offset, name, false);
+  }
+  public void defineStaticAddress(int segment, int offset, String name, boolean whiteListOnlyThisSegment) {
+    SegmentedAddress address = new SegmentedAddress(segment, offset);
+    int physicalAddress = address.toPhysical();
+    StaticAddressesRecorder recorder = cpu.getStaticAddressesRecorder();
+    String existing = recorder.getNames().get(physicalAddress);
+    if (existing != null) {
+      
+      String error =
+          "There is already a static address defined at address " + address + " named "
+              + existing + " but you are trying to redefine it as " + name
+              + ". Please check your mappings for duplicates.";
+      LOGGER.error(error);
+      throw new UnrecoverableException(error);
+    }
+    recorder.addName(physicalAddress, name);
+    if(whiteListOnlyThisSegment) {
+      recorder.addSegmentTowhiteList(address);
+    }
   }
 
   /**

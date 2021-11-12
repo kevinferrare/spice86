@@ -5,4 +5,11 @@ package spice86.emulator.function;
  */
 public enum ValueOperation {
   READ, WRITE;
+
+  public ValueOperation oppositeOperation() {
+    if (this == READ) {
+      return WRITE;
+    }
+    return READ;
+  }
 }
