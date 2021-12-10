@@ -28,7 +28,7 @@ public class CommandLineParser {
 
   private String getCDrive(String value) {
     if (StringUtils.isEmpty(value)) {
-      return "./";
+      return null;
     }
     String unixPathValue = value.replace('\\', '/');
     if (!unixPathValue.endsWith("/")) {

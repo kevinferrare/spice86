@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,9 +76,13 @@ public class ProgramExecutor implements java.io.Closeable {
   }
 
   private void initializeDos(Configuration configuration) {
-    Map<Character, String> driveMap = new HashMap<>();
-    driveMap.put('C', configuration.getcDrive());
     String parentFolder = getParentFolder(configuration);
+    Map<Character, String> driveMap = new HashMap<>();
+    String cDrive = configuration.getcDrive();
+    if(StringUtils.isEmpty(cDrive)) {
+      cDrive = parentFolder;
+    }
+    driveMap.put('C', cDrive);
     machine.getDosInt21Handler().getDosFileManager().setDiskParameters(parentFolder, driveMap);
   }
 
