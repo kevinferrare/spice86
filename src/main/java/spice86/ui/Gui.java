@@ -121,11 +121,8 @@ public class Gui {
   }
 
   private void onMouseMoved(MouseEvent event) {
-    int mouseXInCanvas = (int)event.getX();
-    int mouseYInCanvas = (int)event.getY();
-    // Mouse coords are in this range
-    mouseX = mouseXInCanvas * 639 / width;
-    mouseY = mouseYInCanvas * 199 / height;
+    setMouseX((int)event.getX());
+    setMouseY((int)event.getY());
   }
 
   private void onMouseClick(MouseEvent event, boolean click) {

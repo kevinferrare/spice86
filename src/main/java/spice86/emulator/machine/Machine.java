@@ -287,7 +287,14 @@ public class Machine {
     State state = cpu.getState();
     FunctionHandler functionHandler = cpu.getFunctionHandler();
     functionHandler.call(CallType.MACHINE, state.getCS(), state.getIP(), null, null, () -> "entry", false);
-    runLoop();
+    try {
+      runLoop();
+    } catch(InvalidOperationException e) {
+      throw e;
+    } catch(Exception e) {
+      // Dump the state for any other exception
+      throw new InvalidOperationException(this, e);
+    }
     machineBreakpoints.onMachineStop();
     functionHandler.ret(CallType.MACHINE);
   }

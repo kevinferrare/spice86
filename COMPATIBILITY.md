@@ -29,6 +29,7 @@ Here is a list of old games I tested with what worked and what didn't:
 | Plan 9 From Outer Space| :confused: Not playable | Black screen. | 2021/09/26 |
 | Quest for glory 3 | :see_no_evil: Crashes | Int 2F not implemented (Himem XMS Driver) | 2021/09/26 |
 | SimCity | :see_no_evil: Crashes | Int 10.11 operation "ROM 8x8 double dot pointer" not implemented. | 2021/09/26 |
+| Stunts | :slightly_smiling_face: Playable | Works without issue but crashes when you press a key during intro. | 2021/12/10 |
 | Space Quest : The Sarien Encounter | :confused: Not playable | Program exits with code 1. | 2021/09/26 |
 | Space Quest IV : Roger Wilco and the Time Rippers | :confused: Not playable | Program exits with code 1. | 2021/09/26 |
 | Starvega | :see_no_evil: Crashes | Int 10.11 operation "GET INT 1F pointer" not implemented. | 2021/09/26 |

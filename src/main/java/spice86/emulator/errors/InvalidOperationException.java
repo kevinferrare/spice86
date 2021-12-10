@@ -12,8 +12,15 @@ public class InvalidOperationException extends Exception {
     super(generateStatusMessage(machine, message));
   }
 
+  public InvalidOperationException(Machine machine, Throwable cause) {
+    super(generateStatusMessage(machine, null), cause);
+  }
+
   protected static String generateStatusMessage(Machine machine, String message) {
-    return "An error occurred while machine was in this state: " + machine.getCpu().getState().toString()
-        + ".\nError is: " + message;
+    String error = "An error occurred while machine was in this state: " + machine.getCpu().getState().toString();
+    if(message!=null) {
+      error+=".\nError is: " + message;
+    }
+    return error;
   }
 }

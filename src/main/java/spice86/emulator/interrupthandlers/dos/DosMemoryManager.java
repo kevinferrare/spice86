@@ -34,6 +34,10 @@ public class DosMemoryManager {
     start.setLast();
   }
 
+  public int getPspSegment() {
+    return pspSegment;
+  }
+
   public boolean modifyBlock(int blockSegment, int requestedSize) {
     DosMemoryControlBlock block = getDosMemoryControlBlockFromSegment(blockSegment);
     if (!checkValidOrLogError(block)) {
@@ -44,7 +48,7 @@ public class DosMemoryManager {
       LOGGER.error("Could not join MCB {}.", block);
       return false;
     }
-    if (block.getSize() < requestedSize) {
+    if (block.getSize() < requestedSize - 1) {
       LOGGER.error("MCB {} is too small for requested size {}.", block, requestedSize);
       return false;
     }

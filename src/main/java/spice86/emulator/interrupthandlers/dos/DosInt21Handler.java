@@ -83,6 +83,7 @@ public class DosInt21Handler extends InterruptHandler {
     super.dispatchTable.put(0x4C, this::quitWithExitCode);
     super.dispatchTable.put(0x4E, () -> findFirstMatchingFile(true));
     super.dispatchTable.put(0x4F, () -> findNextMatchingFile(true));
+    super.dispatchTable.put(0x62, this::getPspAddress);
   }
 
   @Override
@@ -498,6 +499,12 @@ public class DosInt21Handler extends InterruptHandler {
     DosFileOperationResult dosFileOperationResult =
         dosFileManager.findNextMatchingFile();
     setStateFromDosFileOperationResult(calledFromVm, dosFileOperationResult);
+  }
+
+  public void getPspAddress() {
+    int pspSegment = dosMemoryManager.getPspSegment();
+    state.setBX(pspSegment);
+    LOGGER.info("GET PSP ADDRESS pspSegment={}", ConvertUtils.toHex16(pspSegment));
   }
 
   private String getStringAtDsDx() {

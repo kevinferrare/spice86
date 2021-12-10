@@ -21,8 +21,8 @@ public class MouseInt33Handler extends InterruptHandler {
 
   private int mouseMinX;
   private int mouseMinY;
-  private int mouseMaxX;
-  private int mouseMaxY;
+  private int mouseMaxX = MOUSE_RANGE_X;
+  private int mouseMaxY = MOUSE_RANGE_Y;
   private int userCallbackMask;
   private int userCallbackSegment;
   private int userCallbackOffset;
@@ -43,8 +43,17 @@ public class MouseInt33Handler extends InterruptHandler {
 
   }
 
-  private int restrictValue(int value, int maxValue, int min, int max, int range) {
-    int valueInRange = (value * maxValue / range);
+  /**
+   *
+   * @param value Raw value from the GUI
+   * @param maxValue Max that value can be
+   * @param min mix expected by program
+   * @param max max expected by program
+   * @return
+   */
+  private int restrictValue(int value, int maxValue, int min, int max) {
+    int range = max - min;
+    int valueInRange = (value * range / maxValue);
     if (valueInRange > max) {
       return max;
     }
@@ -62,8 +71,8 @@ public class MouseInt33Handler extends InterruptHandler {
   }
 
   public void getMousePositionAndStatus() {
-    int x = restrictValue(gui.getMouseX(), gui.getWidth(), mouseMinX, mouseMaxX, MOUSE_RANGE_X);
-    int y = restrictValue(gui.getMouseY(), gui.getHeight(), mouseMinY, mouseMaxY, MOUSE_RANGE_Y);
+    int x = restrictValue(gui.getMouseX(), gui.getWidth(), mouseMinX, mouseMaxX);
+    int y = restrictValue(gui.getMouseY(), gui.getHeight(), mouseMinY, mouseMaxY);
     boolean leftClick = gui.isLeftButtonClicked();
     boolean rightClick = gui.isRightButtonClicked();
     LOGGER.info("GET MOUSE POSITION AND STATUS x={}, y={}, leftClick={}, rightClick={}", x, y, leftClick, rightClick);

@@ -9,6 +9,12 @@
   <root level="WARN">
     <appender-ref ref="STDOUT"/>
   </root>
+  <!-- PIC can be very verbose when programs mistreat it ... -->
+  <logger name="spice86.emulator.devices.externalinterrupt.Pic" level="WARN"/>
+  <!-- Timer can be very verbose -->
+  <logger name="spice86.emulator.devices.timer.Timer" level="WARN"/>
+  <!-- PC speaker is usually no interesting -->
+  <logger name="spice86.emulator.devices.sound.PcSpeaker" level="WARN"/>
   <!-- Display file IO and other DOS interactions -->
   <logger name="spice86.emulator.interrupthandlers.dos" level="INFO"/>
   <!-- Display Video bios interactions -->
