@@ -362,3 +362,12 @@ Cryo dune:
 
 Prince of persia:
 ![](doc/prince_of_persia.PNG)
+
+Stunts:
+![](doc/stunts_menu.PNG)
+
+![](doc/stunts_loop.png)
+
+![](doc/stunts_crash.PNG)
+
+![](doc/stunts_skid.PNG)

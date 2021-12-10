@@ -1,15 +1,10 @@
 package spice86.emulator.gdb;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.function.Consumer;
-
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import spice86.emulator.cpu.Cpu;
 import spice86.emulator.function.CallType;
 import spice86.emulator.function.dump.CsvFunctionInformationToStringConverter;
@@ -17,12 +12,17 @@ import spice86.emulator.function.dump.DetailedFunctionInformationToStringConvert
 import spice86.emulator.function.dump.FunctionInformationDumper;
 import spice86.emulator.function.dump.FunctionInformationToStringConverter;
 import spice86.emulator.function.dump.JavaStubToStringConverter;
+import spice86.emulator.function.dump.KotlinStubToStringConverter;
 import spice86.emulator.machine.Machine;
 import spice86.emulator.machine.breakpoint.BreakPoint;
 import spice86.emulator.machine.breakpoint.BreakPointType;
 import spice86.emulator.machine.breakpoint.UnconditionalBreakPoint;
 import spice86.utils.CheckedConsumer;
 import spice86.utils.ConvertUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 /**
  * Handles custom GDB commands triggered in command line via the monitor prefix.<br/>
@@ -67,9 +67,21 @@ public class GdbCustomCommandsHandler {
       case "dumpfunctions" -> dumpFunctionWithFormat(args, "FunctionsDetails.txt",
           new DetailedFunctionInformationToStringConverter());
       case "dumpjavastubs" -> dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
+      case "dumpkotlinstubs" -> dumpFunctionWithFormat(args, "KotlinStubs.kt", new KotlinStubToStringConverter());
+      case "dumpall" -> dumpAll();
       case "breakcycles" -> breakCycles(args);
       default -> invalidCommand(originalCommand);
     };
+  }
+
+  private String dumpAll() {
+    String[] args = new String[0];
+    dumpMemory(args);
+    dumpFunctionWithFormat(args, "Functions.csv", new CsvFunctionInformationToStringConverter());
+    dumpFunctionWithFormat(args, "FunctionsDetails.txt", new DetailedFunctionInformationToStringConverter());
+    dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
+    dumpFunctionWithFormat(args, "KotlinStubs.java", new KotlinStubToStringConverter());
+    return gdbIo.generateMessageToDisplayResponse("Dumped everything in current directory");
   }
 
   private String peekRet(String[] args) {

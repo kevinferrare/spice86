@@ -1,5 +1,13 @@
 package spice86.emulator.interrupthandlers.dos;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import spice86.emulator.errors.UnrecoverableException;
+import spice86.emulator.memory.Memory;
+import spice86.emulator.memory.MemoryRange;
+import spice86.emulator.memory.MemoryUtils;
+import spice86.utils.ConvertUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,15 +24,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import spice86.emulator.errors.UnrecoverableException;
-import spice86.emulator.memory.Memory;
-import spice86.emulator.memory.MemoryRange;
-import spice86.emulator.memory.MemoryUtils;
 
 public class DosFileManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(DosFileManager.class);
@@ -172,6 +173,9 @@ public class DosFileManager {
   }
 
   public DosFileOperationResult writeFileUsingHandle(int fileHandle, int writeLength, int bufferAddress) {
+    if(isWriteDeviceFileHandle(fileHandle)) {
+      return writeToDevice(fileHandle, writeLength, bufferAddress);
+    }
     if (!isValidFileHandle(fileHandle)) {
       LOGGER.warn("Invalid or unsupported file handle {}. Doing nothing.", fileHandle);
       // Fake that we wrote, this could be used to write to stdout / stderr ...
@@ -187,6 +191,25 @@ public class DosFileManager {
       throw new UnrecoverableException("IOException while writing file", e);
     }
     return DosFileOperationResult.value16(writeLength);
+  }
+
+  private DosFileOperationResult writeToDevice(int fileHandle, int writeLength, int bufferAddress) {
+    String deviceName = getDeviceName(fileHandle);
+    byte[] buffer = memory.getData(bufferAddress, writeLength);
+    System.out.println(deviceName + ConvertUtils.toString(buffer));
+    return DosFileOperationResult.value16(writeLength);
+  }
+
+  public String getDeviceName(int fileHandle) {
+    return switch (fileHandle) {
+      case 0 -> "STDIN";
+      case 1 -> "STDOUT";
+      case 2 -> "STDERR";
+      case 3 -> "STDAUX";
+      case 4 -> "STDPRN";
+      default -> throw new UnrecoverableException(
+          "This is a programming error. getDeviceName called with fileHandle=" + fileHandle);
+    };
   }
 
   public DosFileOperationResult moveFilePointerUsingHandle(int originOfMove, int fileHandle, int offset) {
@@ -206,13 +229,18 @@ public class DosFileManager {
     }
   }
 
+  /**
+   * @param fileSpec a filename with ? when any character can match or * when multiple characters can match. Case is insensitive
+   * @return
+   */
   public DosFileOperationResult findFirstMatchingFile(String fileSpec) {
     String hostSearchSpec = toHostFileName(fileSpec);
     currentMatchingFileSearchFolder = hostSearchSpec.substring(0, hostSearchSpec.lastIndexOf('/') + 1);
-    currentMatchingFileSearchSpec = hostSearchSpec.replace(currentMatchingFileSearchFolder, "").toLowerCase();
+    currentMatchingFileSearchSpec = hostSearchSpec.replace(currentMatchingFileSearchFolder, "");
+    Pattern currentMatchingFileSearchSpecPattern = fileSpectToJavaPattern(currentMatchingFileSearchSpec);
     try (Stream<Path> pathes = Files.walk(Paths.get(currentMatchingFileSearchFolder))) {
       List<Path> matchingPathes = pathes
-          .filter(p -> matchesSpec(currentMatchingFileSearchSpec, p))
+          .filter(p -> matchesSpec(currentMatchingFileSearchSpecPattern, p))
           .toList();
       matchingFilesIterator = matchingPathes.iterator();
       return findNextMatchingFile();
@@ -220,6 +248,19 @@ public class DosFileManager {
       LOGGER.warn("Error while walking path {} or getting attributes.", currentMatchingFileSearchFolder);
       return DosFileOperationResult.error(0x03);
     }
+  }
+
+  /**
+   * Converts a dos filespec to a java regex pattern
+   * @param fileSpec
+   * @return
+   */
+  private Pattern fileSpectToJavaPattern(String fileSpec) {
+    String regex = fileSpec.toLowerCase();
+    regex = regex.replaceAll("\\.", "\\\\.");
+    regex = regex.replaceAll("\\?", ".");
+    regex = regex.replaceAll("\\*", ".*");
+    return Pattern.compile(regex);
   }
 
   public DosFileOperationResult findNextMatchingFile() {
@@ -243,31 +284,18 @@ public class DosFileManager {
   }
 
   /**
-   * @param fileSpec
-   *          a filename with ? when any character can match. Case is insensitive
+   * @param fileSpecPattern
+   *          a regex to match for a file, lower case
    * @param item
    *          a path from which the file to match will be extracted
    * @return true if it matched, false otherwise
    */
-  private boolean matchesSpec(String fileSpec, Path item) {
+  private boolean matchesSpec(Pattern fileSpecPattern, Path item) {
     if (Files.isDirectory(item)) {
       return false;
     }
     String fileName = item.getFileName().toString().toLowerCase();
-    if (fileSpec.length() != fileName.length()) {
-      return false;
-    }
-    for (int i = 0; i < fileSpec.length(); i++) {
-      char fileSpecChar = fileSpec.charAt(i);
-      if (fileSpecChar == '?') {
-        continue;
-      }
-      char fileNameChar = fileName.charAt(i);
-      if (fileNameChar != fileSpecChar) {
-        return false;
-      }
-    }
-    return true;
+    return fileSpecPattern.matcher(fileName).matches();
   }
 
   private void updateDTAFromFile(Path matchingFile) throws IOException {
@@ -375,6 +403,10 @@ public class DosFileManager {
     return DosFileOperationResult.value16(dosIndex);
   }
 
+  private boolean isWriteDeviceFileHandle(int fileHandle) {
+    return fileHandle > 0 && fileHandle < FILE_HANDLE_OFFSET;
+  }
+
   private boolean isValidFileHandle(int fileHandle) {
     return fileHandle >= FILE_HANDLE_OFFSET && fileHandle <= MAX_OPEN_FILES + FILE_HANDLE_OFFSET;
   }
@@ -400,7 +432,7 @@ public class DosFileManager {
    * <li>Replace backslashes with slashes</li>
    * <li>Find case sensitive matches for every path item (since DOS is case insensitive but some OS are not)</li>
    * </ul>
-   * 
+   *
    * @param dosFileName
    * @param caseSensitiveOnlyParent
    *          if true will try to find case sensitive match for only the parent of the file (useful when creating a
@@ -425,7 +457,7 @@ public class DosFileManager {
    * Prefixes the given filename by either the mapped drive folder or the current folder depending on whether there is
    * a Drive in the filename or not.<br/>
    * Does not convert to case sensitive filename.
-   * 
+   *
    * @param dosFileName
    * @return
    */
@@ -442,20 +474,28 @@ public class DosFileManager {
 
   /**
    * Attempts to match the given case insensitive path to something in the file system
-   * 
+   *
    * @param caseInsensitivePath
    * @return a matching path, or null if nothing was found.
    */
   private String toCaseSensitiveFileName(String caseInsensitivePath) {
+    if(caseInsensitivePath==null) {
+      return null;
+    }
     File fileToProcess = new File(caseInsensitivePath);
     if (fileToProcess.exists() || fileToProcess.toPath().getNameCount() == 0) {
       // file exists or root reached, no need to go further
       return caseInsensitivePath;
     }
-    String lowerCaseName = fileToProcess.getName().toLowerCase();
     String parent = toCaseSensitiveFileName(fileToProcess.getParent());
+    if (parent == null) {
+      return null;
+    }
     try (Stream<Path> pathes = Files.walk(Paths.get(parent), 1)) {
-      return pathes.filter(p -> matchesSpec(lowerCaseName, p)).findFirst().map(Path::toString).orElse(null);
+      return pathes.filter(p -> matchesSpec(fileSpectToJavaPattern(fileToProcess.getName()), p))
+          .findFirst()
+          .map(Path::toString)
+          .orElse(null);
     } catch (IOException e) {
       LOGGER.warn("Error while checking file {}.", caseInsensitivePath, e);
     }

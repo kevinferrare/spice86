@@ -1,9 +1,9 @@
 package spice86.utils;
 
-import java.nio.charset.StandardCharsets;
-
 import spice86.emulator.memory.MemoryUtils;
 import spice86.emulator.memory.SegmentedAddress;
+
+import java.nio.charset.StandardCharsets;
 
 public class ConvertUtils {
   private static final int SEGMENT_SIZE = 0x10000;
@@ -50,7 +50,11 @@ public class ConvertUtils {
   }
 
   public static char toChar(int value) {
-    return new String(new byte[] { uint8b(value) }, StandardCharsets.US_ASCII).toCharArray()[0];
+    return toString(new byte[] { uint8b(value) }).toCharArray()[0];
+  }
+
+  public static String toString(byte[] value) {
+    return new String(value, StandardCharsets.US_ASCII);
   }
 
   public static String toSegmentedAddressRepresentation(int segment, int offset) {

@@ -9,6 +9,8 @@ public class SystemBiosInt15Handler extends InterruptHandler {
   public SystemBiosInt15Handler(Machine machine) {
     super(machine);
     this.dispatchTable.put(0xC0, this::unsupported);
+    this.dispatchTable.put(0xC2, this::unsupported);
+    this.dispatchTable.put(0xC4, this::unsupported);
   }
 
   @Override
