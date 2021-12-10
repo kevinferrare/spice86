@@ -17,9 +17,11 @@ public class GdbServer implements java.io.Closeable {
   private Machine machine;
   private boolean running = true;
   private volatile boolean started = false;
+  private String defaultDumpDirectory;
 
-  public GdbServer(Machine machine, int port) {
+  public GdbServer(Machine machine, int port, String defaultDumpDirectory) {
     this.machine = machine;
+    this.defaultDumpDirectory = defaultDumpDirectory;
     start(port);
   }
 
@@ -56,7 +58,7 @@ public class GdbServer implements java.io.Closeable {
   }
 
   private void acceptOneConnection(GdbIo gdbIo) throws IOException {
-    GdbCommandHandler gdbCommandHandler = new GdbCommandHandler(gdbIo, machine);
+    GdbCommandHandler gdbCommandHandler = new GdbCommandHandler(gdbIo, machine, defaultDumpDirectory);
     // Pause the CPU waiting for GDB to connect
     gdbCommandHandler.pauseEmulator();
     this.started = true;

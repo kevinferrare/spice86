@@ -34,11 +34,13 @@ public class GdbCustomCommandsHandler {
   private GdbIo gdbIo;
   private Machine machine;
   private Consumer<BreakPoint> onBreakpointReached;
+  private String defaultDumpDirectory;
 
-  public GdbCustomCommandsHandler(GdbIo gdbIo, Machine machine, Consumer<BreakPoint> onBreakpointReached) {
+  public GdbCustomCommandsHandler(GdbIo gdbIo, Machine machine, Consumer<BreakPoint> onBreakpointReached, String defaultDumpDirectory) {
     this.gdbIo = gdbIo;
     this.machine = machine;
     this.onBreakpointReached = onBreakpointReached;
+    this.defaultDumpDirectory = defaultDumpDirectory;
   }
 
   public String handleCustomCommands(String command) {
@@ -81,7 +83,7 @@ public class GdbCustomCommandsHandler {
     dumpFunctionWithFormat(args, "FunctionsDetails.txt", new DetailedFunctionInformationToStringConverter());
     dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
     dumpFunctionWithFormat(args, "KotlinStubs.java", new KotlinStubToStringConverter());
-    return gdbIo.generateMessageToDisplayResponse("Dumped everything in current directory");
+    return gdbIo.generateMessageToDisplayResponse("Dumped everything in " + defaultDumpDirectory);
   }
 
   private String peekRet(String[] args) {
@@ -111,6 +113,7 @@ public class GdbCustomCommandsHandler {
         """
             Supported custom commands:
              - help: display this
+             - dumpall: dumps everything possible in the current directory
              - dumpMemory <file path to dump>: dump the memory as a binary file
              - dumpFunctionsCsv <file path to dump>: dump information about the function calls executed in csv format
              - dumpFunctions <file path to dump>: dump information about the function calls executed with details in human readable format
@@ -197,6 +200,6 @@ public class GdbCustomCommandsHandler {
     if (args.length >= 2) {
       return args[1];
     }
-    return "spice86dump" + defaultSuffix;
+    return defaultDumpDirectory + "/spice86dump" + defaultSuffix;
   }
 }

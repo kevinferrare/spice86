@@ -26,14 +26,14 @@ public class GdbCommandHandler {
   private GdbCustomCommandsHandler gdbCustomCommandsHandler;
   private GdbCommandBreakpointHandler gdbCommandBreakpointHandler;
 
-  public GdbCommandHandler(GdbIo gdbIo, Machine machine) {
+  public GdbCommandHandler(GdbIo gdbIo, Machine machine, String defaultDumpDirectory) {
     this.gdbIo = gdbIo;
     this.machine = machine;
     this.gdbCommandRegisterHandler = new GdbCommandRegisterHandler(gdbIo, machine);
     this.gdbCommandMemoryHandler = new GdbCommandMemoryHandler(gdbIo, machine);
     this.gdbCommandBreakpointHandler = new GdbCommandBreakpointHandler(gdbIo, machine);
     this.gdbCustomCommandsHandler =
-        new GdbCustomCommandsHandler(gdbIo, machine, gdbCommandBreakpointHandler::onBreakPointReached);
+        new GdbCustomCommandsHandler(gdbIo, machine, gdbCommandBreakpointHandler::onBreakPointReached, defaultDumpDirectory);
   }
 
   public boolean isConnected() {

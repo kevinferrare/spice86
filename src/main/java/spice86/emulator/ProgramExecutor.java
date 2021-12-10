@@ -94,7 +94,7 @@ public class ProgramExecutor implements java.io.Closeable {
   private void startGdbServer(Configuration configuration) {
     Integer gdbPort = configuration.getGdbPort();
     if (gdbPort != null) {
-      gdbServer = new GdbServer(machine, gdbPort);
+      gdbServer = new GdbServer(machine, gdbPort, configuration.getDefaultDumpDirectory());
     }
   }
 

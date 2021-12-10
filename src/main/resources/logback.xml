@@ -13,7 +13,7 @@
   <logger name="spice86.emulator.devices.externalinterrupt.Pic" level="WARN"/>
   <!-- Timer can be very verbose -->
   <logger name="spice86.emulator.devices.timer.Timer" level="WARN"/>
-  <!-- PC speaker is usually no interesting -->
+  <!-- PC speaker is usually not interesting -->
   <logger name="spice86.emulator.devices.sound.PcSpeaker" level="WARN"/>
   <!-- Display file IO and other DOS interactions -->
   <logger name="spice86.emulator.interrupthandlers.dos" level="INFO"/>
