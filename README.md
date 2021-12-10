@@ -77,6 +77,12 @@ The list of custom commands can be displayed like this:
 (gdb) monitor help
 ```
 
+#### Dump everything
+```
+(gdb) monitor dumpall
+```
+Dumps everything described below in one shot. Files are created in the current execution folder.
+
 #### Dump the memory to a file
 ```
 (gdb) monitor dumpmemory path/to/dump.bin

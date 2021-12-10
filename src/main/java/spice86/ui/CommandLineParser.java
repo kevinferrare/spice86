@@ -115,6 +115,12 @@ public class CommandLineParser {
     }
     return Double.parseDouble(value);
   }
+  private String parseDefaultDumpDirectory(String defaultDumpDirectory) {
+    if(StringUtils.isEmpty(defaultDumpDirectory)) {
+      return System.getProperty("user.dir");
+    }
+    return defaultDumpDirectory;
+  }
 
   @SuppressWarnings("java:S106")
   public Configuration parseCommandLine(Application.Parameters parameters) {
@@ -133,7 +139,8 @@ public class CommandLineParser {
               --useCodeOverride=<true or false> if false it will use the names provided by overrideSupplierClassName but not the code
               --programEntryPointSegment=<Segment where to load the program. DOS PSP and MCB will be created before it>
               --expectedChecksum=<Hexadecimal string representing the expected checksum of the checksum>
-              --failOnUnhandledPort=<if true, will fail when encountering an unhandled IO port. Useful to check for unimplemented hardware. false by default.>""");
+              --failOnUnhandledPort=<if true, will fail when encountering an unhandled IO port. Useful to check for unimplemented hardware. false by default.>
+              --defaultDumpDirectory=<Directory to dump data to when not specified otherwise. Workin directory if blank>""");
       return null;
     }
     Map<String, String> commandLineParameters = parameters.getNamed();
@@ -152,7 +159,7 @@ public class CommandLineParser {
         .setExpectedChecksum(this.parseExpectedChecksum(commandLineParameters.get("expectedChecksum")));
     configuration
         .setFailOnUnhandledPort(this.parseFailOnUnhandledPort(commandLineParameters.get("failOnUnhandledPort")));
-
+    configuration.setDefaultDumpDirectory(this.parseDefaultDumpDirectory((commandLineParameters.get("defaultDumpDirectory"))));
     return configuration;
   }
 }

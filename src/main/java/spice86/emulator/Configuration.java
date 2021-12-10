@@ -18,6 +18,7 @@ public class Configuration {
   private boolean failOnUnhandledPort;
   private int programEntryPointSegment;
   private byte[] expectedChecksum = new byte[0];
+  private String defaultDumpDirectory;
 
   public String getExe() {
     return exe;
@@ -105,5 +106,13 @@ public class Configuration {
 
   public void setExpectedChecksum(byte[] expectedChecksum) {
     this.expectedChecksum = expectedChecksum;
+  }
+
+  public String getDefaultDumpDirectory() {
+    return defaultDumpDirectory;
+  }
+
+  public void setDefaultDumpDirectory(String defaultDumpDirectory) {
+    this.defaultDumpDirectory = defaultDumpDirectory;
   }
 }
