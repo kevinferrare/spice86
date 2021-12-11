@@ -129,15 +129,15 @@ public class JavaStubToStringConverter extends JvmFunctionToStringConverter {
   protected String generateFunctionStub(String callsAsComments, String functionName, String functionNameInJava, String segment,
       String offset, String retType) {
     return MessageFormat.format("""
-        // defineFunction({0}, {1}, "{2}", this::{3});
-        public Runnable {3}() '{'
-        {4}
-          return {5}Ret();
-        '}'
+          // defineFunction({0}, {1}, "{2}", this::{3});
+          public Runnable {3}() '{'
+          {4}
+            return {5}Ret();
+          '}'
         """,
         segment, offset, functionName, functionNameInJava,
         //
-        callsAsComments,
+        callsAsComments.indent(2),
         //
         retType);
   }
