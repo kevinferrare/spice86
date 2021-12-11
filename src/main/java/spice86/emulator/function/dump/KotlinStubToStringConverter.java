@@ -66,47 +66,49 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
 
   protected String generatePointerGetter(String comment, String javaName, String offset) {
     return MessageFormat.format("""
-          var {1}: SegmentedAddress
-          {0}
-          get() = new SegmentedAddress(getUint16({2} + 2), getUint16({2}))""", comment, javaName, offset);
+            var `{1}`: SegmentedAddress
+              {0}
+              get() = new SegmentedAddress(getUint16({2} + 2), getUint16({2}))
+          """, comment, javaName, offset);
   }
 
   protected String generateNonPointerGetter(String comment, String javaName, String offset, int bits) {
-    return MessageFormat.format("""
-          var {1}: Int
-          {0}
-          get() = getUint{2}({3})""", comment, javaName, bits, offset);
+      return MessageFormat.format("""
+            var `{1}`: Int
+              {0}
+              get() = getUint{2}({3})
+          """, comment, javaName, bits, offset);
   }
 
   protected String generatePointerSetter(String comment, String javaName, String offset) {
     return MessageFormat.format("""
-          {0}
-          set(value: SegmentedAddress) = '{'
-            setUint16({2} + 2, value.getSegment());
-            setUint16({2}, value.getOffset());
-          '}'""", comment, javaName, offset);
+              {0}
+              set(value: SegmentedAddress) = '{'
+                setUint16({2} + 2, value.getSegment())
+                setUint16({2}, value.getOffset())
+              '}'
+          """, comment, javaName, offset);
   }
 
   protected String generateNonPointerSetter(String comment, String javaName, String offset, int bits) {
     return MessageFormat.format("""
-          {0}
-          set(value: Int) = '{'
-            setUint{2}({3}, value);
-          '}'""", comment, javaName, bits, offset);
+              {0}
+              set(value: Int) = setUint{2}({3}, value)
+          """, comment, javaName, bits, offset);
   }
 
   protected String generateFunctionStub(String callsAsComments, String functionName, String functionNameInJava, String segment,
       String offset, String retType) {
     return MessageFormat.format("""
-        // defineFunction({0}, {1}, "{2}", this::{3});
-        fun {3}(): Runnable '{'
-        {4}
-          return {5}Ret();
-        '}'
+          // defineFunction({0}, {1}, "{2}") '{' {3}() '}'
+          fun {3}(): Runnable '{'
+          {4}
+            return {5}Ret()
+          '}'
         """,
         segment, offset, functionName, functionNameInJava,
         //
-        callsAsComments,
+        callsAsComments.indent(2),
         //
         retType);
   }

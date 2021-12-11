@@ -255,10 +255,10 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
       String segment, String offset, String retType);
 
   private String getCallsAsComments(List<FunctionInformation> calls) {
-    return joinNewLine(calls.stream().map(f -> "  // " + toJavaName(f, true) + "();"));
+    return joinNewLine(calls.stream().map(f -> "// " + toJavaName(f, true) + "();"));
   }
 
   private String getNoStubReasonCommentForMethod(FunctionInformation functionInformation, String reason) {
-    return "// Not providing stub for " + functionInformation.getName() + ". Reason: " + reason + '\n';
+    return "  // Not providing stub for " + functionInformation.getName() + ". Reason: " + reason + '\n';
   }
 }

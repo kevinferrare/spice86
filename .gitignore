@@ -16,4 +16,5 @@ dependency-reduced-pom.xml
 spice86dumpFunctions.csv
 spice86dumpFunctionsDetails.txt
 spice86dumpJavaStubs.java
+spice86dumpKotlinStubs.kt
 spice86dumpMemoryDump.bin

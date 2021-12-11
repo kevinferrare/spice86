@@ -22,6 +22,7 @@ import spice86.utils.ConvertUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.function.Consumer;
 
 /**
@@ -64,25 +65,39 @@ public class GdbCustomCommandsHandler {
       case "callstack" -> callStack();
       case "peekret" -> peekRet(args);
       case "dumpmemory" -> dumpMemory(args);
-      case "dumpfunctionscsv" -> dumpFunctionWithFormat(args, "Functions.csv",
-          new CsvFunctionInformationToStringConverter());
-      case "dumpfunctions" -> dumpFunctionWithFormat(args, "FunctionsDetails.txt",
-          new DetailedFunctionInformationToStringConverter());
-      case "dumpjavastubs" -> dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
-      case "dumpkotlinstubs" -> dumpFunctionWithFormat(args, "KotlinStubs.kt", new KotlinStubToStringConverter());
+      case "dumpfunctionscsv" -> dumpFunctionsCsv(args);
+      case "dumpfunctions" -> dumpFunctions(args);
+      case "dumpjavastubs" -> dumpJavaStubs(args);
+      case "dumpkotlinstubs" -> dumpKotlinStubs(args);
       case "dumpall" -> dumpAll();
       case "breakcycles" -> breakCycles(args);
       default -> invalidCommand(originalCommand);
     };
   }
 
+  private String dumpFunctionsCsv(String[] args) {
+    return dumpFunctionWithFormat(args, "Functions.csv", new CsvFunctionInformationToStringConverter());
+  }
+
+  private String dumpFunctions(String[] args) {
+    return dumpFunctionWithFormat(args, "FunctionsDetails.txt", new DetailedFunctionInformationToStringConverter());
+  }
+
+  private String dumpJavaStubs(String[] args) {
+    return dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
+  }
+
+  private String dumpKotlinStubs(String[] args) {
+    return dumpFunctionWithFormat(args, "KotlinStubs.kt", new KotlinStubToStringConverter());
+  }
+
   private String dumpAll() {
     String[] args = new String[0];
     dumpMemory(args);
-    dumpFunctionWithFormat(args, "Functions.csv", new CsvFunctionInformationToStringConverter());
-    dumpFunctionWithFormat(args, "FunctionsDetails.txt", new DetailedFunctionInformationToStringConverter());
-    dumpFunctionWithFormat(args, "JavaStubs.java", new JavaStubToStringConverter());
-    dumpFunctionWithFormat(args, "KotlinStubs.java", new KotlinStubToStringConverter());
+    dumpFunctionsCsv(args);
+    dumpFunctions(args);
+    dumpJavaStubs(args);
+    dumpKotlinStubs(args);
     return gdbIo.generateMessageToDisplayResponse("Dumped everything in " + defaultDumpDirectory);
   }
 
@@ -110,21 +125,21 @@ public class GdbCustomCommandsHandler {
 
   private String help(String additionalMessage) {
     return gdbIo.generateMessageToDisplayResponse(additionalMessage +
-        """
+        MessageFormat.format("""
             Supported custom commands:
              - help: display this
-             - dumpall: dumps everything possible in the current directory
+             - dumpall: dumps everything possible in the default directory which is {0}
              - dumpMemory <file path to dump>: dump the memory as a binary file
              - dumpFunctionsCsv <file path to dump>: dump information about the function calls executed in csv format
              - dumpFunctions <file path to dump>: dump information about the function calls executed with details in human readable format
-             - dumpJavaStubs <file path to dump>: dump java stubs for functions to be used as override
+             - dumpJavaStubs <file path to dump>: dump java stubs for functions and globals to be used as override
+             - dumpKotlinStubs <file path to dump>: dump kotlin stubs for functions and globals to be used as override
              - breakCycles <number of cycles to wait before break>: breaks after the given number of cycles is reached
              - breakStop: setups a breakpoint when machine shuts down
              - callStack: dumps the callstack to see in which function you are in the VM.
-             - peekRet <optional type>: displays the return address of the current function as stored in the stack in RAM. If a parameter is provided, dump the return on the stack as if the return was one of the provided type. Valid values are: """
-        + getValidRetValues() + """
+             - peekRet <optional type>: displays the return address of the current function as stored in the stack in RAM. If a parameter is provided, dump the return on the stack as if the return was one of the provided type. Valid values are: {1}
              - state: displays the state of the machine
-            """);
+            """, this.defaultDumpDirectory, getValidRetValues()));
   }
 
   private String state() {
