@@ -1,17 +1,8 @@
 package spice86.emulator;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import spice86.emulator.cpu.Cpu;
 import spice86.emulator.cpu.State;
 import spice86.emulator.devices.timer.CounterConfigurator;
@@ -29,6 +20,15 @@ import spice86.emulator.machine.Machine;
 import spice86.emulator.memory.SegmentedAddress;
 import spice86.ui.Gui;
 import spice86.utils.ConvertUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Loads and executes a program following the given configuration in the emulator.<br/>
@@ -76,7 +76,7 @@ public class ProgramExecutor implements java.io.Closeable {
   }
 
   private void initializeDos(Configuration configuration) {
-    String parentFolder = getParentFolder(configuration);
+    String parentFolder = getExeParentFolder(configuration);
     Map<Character, String> driveMap = new HashMap<>();
     String cDrive = configuration.getcDrive();
     if(StringUtils.isEmpty(cDrive)) {
@@ -103,8 +103,16 @@ public class ProgramExecutor implements java.io.Closeable {
     }
   }
 
-  private String getParentFolder(Configuration configuration) {
-    return (Paths.get(configuration.getExe()).toFile().getParent() + '/').replace('\\', '/');
+  private String getExeParentFolder(Configuration configuration) {
+    File exe = Paths.get(configuration.getExe()).toFile();
+    String parent = exe.getParent();
+    if (parent == null) {
+      // Must be in the current directory
+      parent = System.getProperty("user.dir");
+    }
+    parent = Paths.get(parent).toAbsolutePath().normalize().toString();
+    parent = parent.replace('\\', '/') + '/';
+    return parent;
   }
 
   private void loadFileToRun(Configuration configuration) {
