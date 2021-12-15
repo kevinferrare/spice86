@@ -1,28 +1,26 @@
 package spice86.ui;
 
-import java.nio.IntBuffer;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javafx.application.Platform;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.transform.Scale;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import spice86.emulator.devices.video.Rgb;
-import spice86.utils.ConvertUtils;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 
 /**
  * GUI of the emulator.<br/>
@@ -35,8 +33,10 @@ public class Gui {
   private static final Logger LOGGER = LoggerFactory.getLogger(Gui.class);
 
   private Stage stage;
-  private Group group = new Group();
-  private Canvas canvas;
+  private int mainCanvasScale = 4;
+  private AnchorPane layout = new AnchorPane();
+  // Map associating a start address to a canvas
+  private Map<Integer, VideoBuffer> videoBuffers = new HashMap<>();
   private int width = 1;
   private int height = 1;
   private KeyCode lastKeyCode = null;
@@ -135,54 +135,82 @@ public class Gui {
 
   }
 
-  public void setResolution(int width, int height) {
+  public void setResolution(int width, int height, int address) {
+    videoBuffers.clear();
     this.width = width;
     this.height = height;
-    canvas = new Canvas(width, height);
-    canvas.getGraphicsContext2D();
-    Scale scale = new Scale();
-    scale.setPivotX(0);
-    scale.setPivotY(0);
-    scale.setX(4);
-    scale.setY(4);
-    canvas.getTransforms().add(scale);
-    canvas.setOnMouseMoved(this::onMouseMoved);
-    canvas.setOnMousePressed(event -> onMouseClick(event, true));
-    canvas.setOnMouseReleased(event -> onMouseClick(event, false));
+    addBuffer(address, mainCanvasScale, width, height, canvas -> {
+      canvas.setOnMouseMoved(this::onMouseMoved);
+      canvas.setOnMousePressed(event -> onMouseClick(event, true));
+      canvas.setOnMouseReleased(event -> onMouseClick(event, false));
+    });
+  }
+
+  public void addBuffer(int address, double scale, int bufferWidth, int bufferHeight, Consumer<Canvas> canvasPostSetupAction) {
+    VideoBuffer videoBuffer = new VideoBuffer(bufferWidth, bufferHeight, scale, address, videoBuffers.size());
+    Canvas canvas = videoBuffer.getCanvas();
+    videoBuffers.put(address, videoBuffer);
+    if (canvasPostSetupAction != null) {
+      canvasPostSetupAction.accept(canvas);
+    }
+    relayout();
+  }
+
+  private void relayout() {
     if (stage != null) {
       Platform.runLater(() -> {
-        group.getChildren().clear();
-        group.getChildren().add(canvas);
+        layout.getChildren().clear();
+        for (VideoBuffer videoBuffer : sortedBuffers()) {
+          layoutOneBuffer(videoBuffer);
+        }
         stage.sizeToScene();
       });
     }
   }
 
-  public void draw(byte[] memory, int startAddress, Rgb[] palette) {
-    if (canvas == null) {
-      return;
+  private void layoutOneBuffer(VideoBuffer videoBuffer) {
+    Group group = new Group();
+    group.getChildren().add(videoBuffer.getCanvas());
+
+    if (videoBuffer.getIndex() == 0) {
+      // Main display
+      AnchorPane.setTopAnchor(group, 0.0);
+      AnchorPane.setLeftAnchor(group, 0.0);
+      layout.getChildren().clear();
+      layout.getChildren().add(group);
+    } else {
+      // Additional buffers, below
+      int additionalCanvasIndex = videoBuffer.getIndex() - 1;
+      int line = additionalCanvasIndex % mainCanvasScale;
+      int column = additionalCanvasIndex / mainCanvasScale;
+      AnchorPane.setTopAnchor(group, (double)height * line);
+      AnchorPane.setLeftAnchor(group, (double)width * (mainCanvasScale + column));
+      layout.getChildren().add(group);
     }
-    int size = width * height;
-    IntBuffer buffer = IntBuffer.allocate(size);
-    int endAddress = startAddress + size;
-    for (int i = startAddress; i < endAddress; i++) {
-      int colorIndex = ConvertUtils.uint8(memory[i]);
-      Rgb pixel = palette[colorIndex];
-      int argb = pixel.toArgb();
-      buffer.put(argb);
+  }
+
+  private Set<VideoBuffer> sortedBuffers() {
+    return new TreeSet<>(videoBuffers.values());
+  }
+
+  public void removeBuffer(int address) {
+    videoBuffers.remove(address);
+    relayout();
+  }
+
+  public void draw(byte[] memory, Rgb[] palette) {
+    for (VideoBuffer videoBuffer : sortedBuffers()) {
+      videoBuffer.draw(memory, palette);
     }
-    buffer.flip();
-    Platform.runLater(() -> {
-      GraphicsContext gc = canvas.getGraphicsContext2D();
-      PixelWriter pw = gc.getPixelWriter();
-      pw.setPixels(0, 0, width, height,
-          PixelFormat.getIntArgbInstance(), buffer, width);
-    });
+  }
+
+  public Map<Integer, VideoBuffer> getVideoBuffers() {
+    return videoBuffers;
   }
 
   public void setStage(Stage stage) {
     this.stage = stage;
-    Scene scene = new Scene(group);
+    Scene scene = new Scene(layout);
     scene.setCursor(Cursor.NONE);
     scene.setOnKeyPressed(this::onKeyPressed);
     scene.setOnKeyReleased(this::onKeyReleased);

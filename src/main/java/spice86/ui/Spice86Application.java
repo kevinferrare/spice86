@@ -1,21 +1,20 @@
 package spice86.ui;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.image.Image;
+import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import spice86.emulator.Configuration;
+import spice86.emulator.ProgramExecutor;
+import spice86.emulator.function.OverrideSupplier;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.scene.image.Image;
-import javafx.stage.Stage;
-import spice86.emulator.Configuration;
-import spice86.emulator.ProgramExecutor;
-import spice86.emulator.function.OverrideSupplier;
 
 /**
  * GUI entry point.<br/>
@@ -38,7 +37,7 @@ public class Spice86Application extends Application {
     }
     Gui gui = new Gui();
     gui.setStage(stage);
-    gui.setResolution(320, 200);
+    gui.setResolution(320, 200, 0);
     stage.setTitle("Spice86: " + configuration.getExe());
     stage.setResizable(false);
     stage.setOnCloseRequest(event -> exit());

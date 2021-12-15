@@ -1,30 +1,6 @@
 package spice86.emulator.function.dump;
 
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.WordUtils;
-
-import spice86.emulator.cpu.SegmentRegisters;
-import spice86.emulator.function.AddressOperation;
-import spice86.emulator.function.CallType;
-import spice86.emulator.function.FunctionInformation;
-import spice86.emulator.function.FunctionReturn;
-import spice86.emulator.function.OperandSize;
-import spice86.emulator.function.SegmentRegisterBasedAddress;
-import spice86.emulator.function.ValueOperation;
-import spice86.emulator.memory.SegmentedAddress;
-import spice86.utils.ConvertUtils;
 
 /**
  * Converts FunctionInformation to java stubs for easy override

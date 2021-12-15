@@ -28,15 +28,6 @@ public class PauseHandler {
     logStatus("requestPauseAndWait finished");
   }
 
-  public void requestResumeAndWait() {
-    logStatus("requestResumeAndWait started");
-    pauseEnded = false;
-    requestResume();
-    while (!pauseEnded)
-      ;
-    logStatus("requestResumeAndWait finished");
-  }
-
   public void requestResume() {
     logStatus("requestResume started");
     pauseRequested = false;

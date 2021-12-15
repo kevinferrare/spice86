@@ -73,7 +73,7 @@ public class GdbCommandHandler {
       }
     } finally {
       if (gdbCommandBreakpointHandler.isResumeEmulatorOnCommandEnd()) {
-        pauseHandler.requestResumeAndWait();
+        pauseHandler.requestResume();
       }
     }
   }

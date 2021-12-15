@@ -40,6 +40,10 @@ public class VgaCard extends DefaultIOPortHandler {
     this.vgaDac = new VgaDac(machine);
   }
 
+  public VgaDac getVgaDac() {
+    return vgaDac;
+  }
+
   /**
    * @return true when in retrace
    */
@@ -101,8 +105,7 @@ public class VgaCard extends DefaultIOPortHandler {
 
   public void updateScreen() {
     if (gui != null) {
-      gui.draw(memory.getRam(), MemoryUtils.toPhysicalAddress(MemoryMap.GRAPHIC_VIDEO_MEMORY_SEGMENT, 0),
-          vgaDac.getRgbs());
+      gui.draw(memory.getRam(), vgaDac.getRgbs());
     }
   }
 
@@ -132,7 +135,7 @@ public class VgaCard extends DefaultIOPortHandler {
       int videoHeight = 200;
       int videoWidth = 320;
       if (gui != null) {
-        gui.setResolution(videoWidth, videoHeight);
+        gui.setResolution(videoWidth, videoHeight, MemoryUtils.toPhysicalAddress(MemoryMap.GRAPHIC_VIDEO_MEMORY_SEGMENT, 0));
       }
     } else {
       LOGGER.error("UNSUPPORTED VIDEO MODE {}", mode);

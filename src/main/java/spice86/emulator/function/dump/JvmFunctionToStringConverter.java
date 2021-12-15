@@ -25,7 +25,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-abstract public class JvmFunctionToStringConverter extends FunctionInformationToStringConverter {
+public abstract class JvmFunctionToStringConverter extends FunctionInformationToStringConverter {
   private static final SegmentRegisters SEGMENT_REGISTERS = new SegmentRegisters();
 
   @Override
@@ -48,7 +48,7 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateFileHeaderWithAccessors(numberOfGlobals, globalsContent, segmentValues);
   }
 
-  abstract protected String generateFileHeaderWithAccessors(int numberOfGlobals, String globalsContent,
+  protected abstract String generateFileHeaderWithAccessors(int numberOfGlobals, String globalsContent,
       String segmentValues);
 
   private boolean isOffsetEqualsAndSegmentDifferent(SegmentedAddress address1, SegmentedAddress address2) {
@@ -106,7 +106,7 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateClassForGlobalsOnCSWithValue(segmentValueHex, globalsContent);
   }
 
-  abstract protected String generateClassForGlobalsOnCSWithValue(String segmentValueHex, String globalsContent);
+  protected abstract String generateClassForGlobalsOnCSWithValue(String segmentValueHex, String globalsContent);
 
   private String generateClassForGlobalsOnSegment(int segmentIndex, Collection<SegmentRegisterBasedAddress> globals) {
     if (SegmentRegisters.CS_INDEX == segmentIndex) {
@@ -119,7 +119,7 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateClassForGlobalsOnSegment(segmentName, segmentNameCamel, globalsContent);
   }
 
-  abstract protected String generateClassForGlobalsOnSegment(String segmentName, String segmentNameCamel,
+  protected abstract String generateClassForGlobalsOnSegment(String segmentName, String segmentNameCamel,
       String globalsContent);
 
   private String generateGettersSettersForAddresses(Collection<SegmentRegisterBasedAddress> addresses) {
@@ -197,9 +197,9 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateNonPointerGetter(comment, javaName, offset, bits);
   }
 
-  abstract protected String generatePointerGetter(String comment, String javaName, String offset);
+  protected abstract String generatePointerGetter(String comment, String javaName, String offset);
 
-  abstract protected String generateNonPointerGetter(String comment, String javaName, String offset, int bits);
+  protected abstract String generateNonPointerGetter(String comment, String javaName, String offset, int bits);
 
   private String generateSetter(String comment, OperandSize operandSize, String javaName, String offset) {
     if (operandSize == OperandSize.DWORD32PTR) {
@@ -210,9 +210,9 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateNonPointerSetter(comment, javaName, offset, bits);
   }
 
-  abstract protected String generatePointerSetter(String comment, String javaName, String offset);
+  protected abstract String generatePointerSetter(String comment, String javaName, String offset);
 
-  abstract protected String generateNonPointerSetter(String comment, String javaName, String offset, int bits);
+  protected abstract String generateNonPointerSetter(String comment, String javaName, String offset, int bits);
 
   @Override
   public String getFileFooter() {
@@ -251,7 +251,7 @@ abstract public class JvmFunctionToStringConverter extends FunctionInformationTo
     return generateFunctionStub(callsAsComments, functionName, functionNameInJava, segment, offset, retType);
   }
 
-  abstract protected String generateFunctionStub(String callsAsComments, String functionName, String functionNameInJava,
+  protected abstract String generateFunctionStub(String callsAsComments, String functionName, String functionNameInJava,
       String segment, String offset, String retType);
 
   private String getCallsAsComments(List<FunctionInformation> calls) {

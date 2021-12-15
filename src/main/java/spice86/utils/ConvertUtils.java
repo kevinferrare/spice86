@@ -4,9 +4,11 @@ import spice86.emulator.memory.MemoryUtils;
 import spice86.emulator.memory.SegmentedAddress;
 
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 public class ConvertUtils {
   private static final int SEGMENT_SIZE = 0x10000;
+  private static final Pattern HEX_STRING_START_PATTERN = Pattern.compile("0x");
 
   public static String toHex(byte value) {
     return String.format("0x%X", value);
@@ -161,7 +163,8 @@ public class ConvertUtils {
    * @return a long since unsigned ints are not a thing in java
    */
   public static long parseHex32(String value) {
-    return Long.parseLong(value, 16);
+    String hex = HEX_STRING_START_PATTERN.matcher(value).replaceAll("");
+    return Long.parseLong(hex, 16);
   }
 
   public static long bytesToInt32(byte[] data, int start) {

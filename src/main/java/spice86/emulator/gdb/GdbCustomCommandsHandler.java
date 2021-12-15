@@ -6,6 +6,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spice86.emulator.cpu.Cpu;
+import spice86.emulator.devices.video.VgaCard;
 import spice86.emulator.function.CallType;
 import spice86.emulator.function.dump.CsvFunctionInformationToStringConverter;
 import spice86.emulator.function.dump.DetailedFunctionInformationToStringConverter;
@@ -17,6 +18,9 @@ import spice86.emulator.machine.Machine;
 import spice86.emulator.machine.breakpoint.BreakPoint;
 import spice86.emulator.machine.breakpoint.BreakPointType;
 import spice86.emulator.machine.breakpoint.UnconditionalBreakPoint;
+import spice86.emulator.memory.Memory;
+import spice86.ui.Gui;
+import spice86.ui.VideoBuffer;
 import spice86.utils.CheckedConsumer;
 import spice86.utils.ConvertUtils;
 
@@ -24,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Handles custom GDB commands triggered in command line via the monitor prefix.<br/>
@@ -37,7 +42,8 @@ public class GdbCustomCommandsHandler {
   private Consumer<BreakPoint> onBreakpointReached;
   private String defaultDumpDirectory;
 
-  public GdbCustomCommandsHandler(GdbIo gdbIo, Machine machine, Consumer<BreakPoint> onBreakpointReached, String defaultDumpDirectory) {
+  public GdbCustomCommandsHandler(GdbIo gdbIo, Machine machine, Consumer<BreakPoint> onBreakpointReached,
+      String defaultDumpDirectory) {
     this.gdbIo = gdbIo;
     this.machine = machine;
     this.onBreakpointReached = onBreakpointReached;
@@ -71,6 +77,7 @@ public class GdbCustomCommandsHandler {
       case "dumpkotlinstubs" -> dumpKotlinStubs(args);
       case "dumpall" -> dumpAll();
       case "breakcycles" -> breakCycles(args);
+      case "vbuffer" -> vbuffer(args);
       default -> invalidCommand(originalCommand);
     };
   }
@@ -139,6 +146,11 @@ public class GdbCustomCommandsHandler {
              - callStack: dumps the callstack to see in which function you are in the VM.
              - peekRet <optional type>: displays the return address of the current function as stored in the stack in RAM. If a parameter is provided, dump the return on the stack as if the return was one of the provided type. Valid values are: {1}
              - state: displays the state of the machine
+             - vbuffer: family of commands to control video bufers:
+               - vbuffer refresh: refreshes the screen
+               - vbuffer add <address> <resolution> <scale?>: Example vbuffer add 0x1234 320x200 1.5 -> Add an additional buffer displaying what is at address 0x1234, with resolution 320x200 and scale 1.5
+               - vbuffer remove <address>: Deletes the buffer at address
+               - vbuffer list: Lists the buffers currently displayed
             """, this.defaultDumpDirectory, getValidRetValues()));
   }
 
@@ -216,5 +228,106 @@ public class GdbCustomCommandsHandler {
       return args[1];
     }
     return defaultDumpDirectory + "/spice86dump" + defaultSuffix;
+  }
+
+  private String vbuffer(String[] args) {
+    try {
+      String action = extractAction(args);
+      Gui gui = machine.getGui();
+      VgaCard vgaCard = machine.getVgaCard();
+      // Actions for 1 parameter
+      if ("refresh".equals(action)) {
+        Memory memory = machine.getMemory();
+        gui.draw(memory.getRam(), vgaCard.getVgaDac().getRgbs());
+        return gdbIo.generateResponse("");
+      } else if ("list".equals(action)) {
+        String list = gui.getVideoBuffers().values().stream().map(Object::toString).collect(Collectors.joining("\n"));
+        return gdbIo.generateMessageToDisplayResponse(list);
+      }
+
+      int address = extractAddress(args, action);
+      if ("remove".equals(action)) {
+        gui.removeBuffer(address);
+        return gdbIo.generateMessageToDisplayResponse("Removed buffer at address " + address);
+      }
+      int[] resolution = extractResolution(args, action);
+      double scale = extractScale(args);
+      if ("add".equals(action)) {
+        VideoBuffer existing = gui.getVideoBuffers().get(address);
+        if (existing != null) {
+          return gdbIo.generateMessageToDisplayResponse("Buffer already exists: " + existing);
+        }
+        gui.addBuffer(address, scale, resolution[0], resolution[1], null);
+        return gdbIo.generateMessageToDisplayResponse("Added buffer to view address " + address);
+      } else {
+        return gdbIo.generateMessageToDisplayResponse("Could not understand action " + action);
+      }
+    } catch (IllegalArgumentException e) {
+      return gdbIo.generateMessageToDisplayResponse(e.getMessage());
+    }
+  }
+
+  private String extractAction(String[] args) throws IllegalArgumentException {
+    if (args.length >= 2) {
+      return args[1];
+    }
+    throw new IllegalArgumentException("You need to specify an action. Valid actions are [refresh, add, remove]");
+  }
+
+  private int extractAddress(String[] args, String action) throws IllegalArgumentException {
+    if (args.length < 3) {
+      throw new IllegalArgumentException(
+          "You need to specify an address for action " + action + ". Format is 0x12AB (hex) or 1234 (decimal)");
+    }
+    String addressString = args[2];
+    try {
+      return parseAddress(addressString);
+    } catch (NumberFormatException nfe) {
+      throw new IllegalArgumentException("Could not parse address " + addressString, nfe);
+    }
+  }
+
+  private int parseAddress(String address) throws NumberFormatException {
+    if (address.contains("0x")) {
+      return (int)ConvertUtils.parseHex32(address);
+    }
+    return Integer.parseInt(address);
+  }
+
+  private int[] extractResolution(String[] args, String action) throws IllegalArgumentException {
+    if (args.length < 4) {
+      throw new IllegalArgumentException(
+          "You need to specify a resolution for action " + action + ". Format is 320x200 for resolution");
+    }
+    String resolutionString = args[3];
+    return parseResolution(resolutionString);
+  }
+
+  private int[] parseResolution(String resolution) throws IllegalArgumentException {
+    String[] split = resolution.split("x");
+    if (split.length != 2) {
+      throw new IllegalArgumentException("Could not parse resolution " + resolution + ". Format is like 320x200");
+    }
+    try {
+      return new int[] { Integer.parseInt(split[0]), Integer.parseInt(split[1]) };
+    } catch (NumberFormatException nfe) {
+      throw new IllegalArgumentException("Could not parse numbers in resolution " + resolution, nfe);
+    }
+  }
+
+  private double extractScale(String[] args) throws IllegalArgumentException {
+    if (args.length != 5) {
+      // Not specified in input
+      return 1.0d;
+    }
+    String scaleString = args[4];
+    if (!NumberUtils.isParsable(scaleString)) {
+      throw new IllegalArgumentException("Could not parse scale " + scaleString);
+    }
+    double scale = Double.parseDouble(scaleString);
+    if (scale < 0.1) {
+      throw new IllegalArgumentException("Scale cannot be less than 0.1");
+    }
+    return scale;
   }
 }

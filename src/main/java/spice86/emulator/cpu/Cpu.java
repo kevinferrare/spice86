@@ -1,32 +1,31 @@
 package spice86.emulator.cpu;
 
-import static spice86.utils.ConvertUtils.int16;
-import static spice86.utils.ConvertUtils.int8;
-import static spice86.utils.ConvertUtils.uint16;
-import static spice86.utils.ConvertUtils.uint32;
-import static spice86.utils.ConvertUtils.uint8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import spice86.emulator.callback.CallbackHandler;
+import spice86.emulator.errors.InvalidOperationException;
+import spice86.emulator.errors.UnhandledOperationException;
+import spice86.emulator.function.CallType;
+import spice86.emulator.function.FunctionHandler;
+import spice86.emulator.function.OperandSize;
+import spice86.emulator.function.StaticAddressesRecorder;
+import spice86.emulator.function.ValueOperation;
+import spice86.emulator.ioports.IOPortDispatcher;
+import spice86.emulator.machine.Machine;
+import spice86.emulator.memory.Memory;
+import spice86.emulator.memory.MemoryUtils;
+import spice86.utils.ConvertUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import spice86.emulator.callback.CallbackHandler;
-import spice86.emulator.errors.InvalidOperationException;
-import spice86.emulator.errors.UnhandledOperationException;
-import spice86.emulator.function.ValueOperation;
-import spice86.emulator.function.CallType;
-import spice86.emulator.function.FunctionHandler;
-import spice86.emulator.function.OperandSize;
-import spice86.emulator.function.StaticAddressesRecorder;
-import spice86.emulator.ioports.IOPortDispatcher;
-import spice86.emulator.machine.Machine;
-import spice86.emulator.memory.Memory;
-import spice86.emulator.memory.MemoryUtils;
-import spice86.utils.ConvertUtils;
+import static spice86.utils.ConvertUtils.int16;
+import static spice86.utils.ConvertUtils.int8;
+import static spice86.utils.ConvertUtils.uint16;
+import static spice86.utils.ConvertUtils.uint32;
+import static spice86.utils.ConvertUtils.uint8;
 
 /**
  * Implementation of a 8086 CPU.<br/>
