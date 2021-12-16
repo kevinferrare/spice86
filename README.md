@@ -240,7 +240,7 @@ package my.program;
 public class MyProgramOverrideSupplier implements OverrideSupplier {
   @Override
   public Map<SegmentedAddress, FunctionInformation> generateFunctionInformations(int programStartSegment,
-      Machine machine) {
+                                                                                 Machine machine) {
     Map<SegmentedAddress, FunctionInformation> res = new HashMap<>();
     // In more complex examples, overrides may call each other
     new MyOverrides(res, programStartSegment, machine);
@@ -315,8 +315,8 @@ If you just want to use the function names and not the overrides, you could add 
 If you build a project around this, just call Spice86 like this in your main:
 ```java
   public static void main(String[] args) {
-    Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
-  }
+        Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
+        }
 ```
 ### Generating overrides
 The command dumpJavaStubs generates a text file with some java stubs that could be generated automatically.
@@ -329,9 +329,9 @@ Generated stub look like this:
 ...
 // defineFunction(0x2538, 0x151, "unknown", this::unknown_0x2538_0x151_0x254D1);
 public Runnable unknown_0x2538_0x151_0x254D1() {
-  return farRet();
-}
-...
+        return farRet();
+        }
+        ...
 ```
 You can copy paste the stub to your code.
 
@@ -387,7 +387,7 @@ mvn clean install
 
 ### How to debug
 
-The main class is 
+The main class is
 
 ```java
 spice86.main.Main
