@@ -127,12 +127,16 @@ You can also dump the functions as CSV for import and processing in a spreadshee
 ```
 (gdb) monitor dumpfunctionscsv path/to/functions.txt
 ```
-#### Generate Java code
+#### Generate Java / Kotlin code
 ```
+#Java
 (gdb) monitor dumpJavaStubs path/to/stub.java
+
+#Kotlin
+(gdb) monitor dumpKotlinStubs path/to/stub.kt
 ```
 
-This will generate java source code with:
+This will generate java / kotlin source code with:
 - The function calls and how to override them
 - Accessors for global variables (memory bytes accessed via hardcoded address)
 
@@ -145,6 +149,25 @@ Break after x emulated CPU Cycles:
 Break at the end of the emulated program:
 ```
 (gdb) monitor breakStop
+```
+
+#### Displaying additional buffers
+Sometimes it's useful to see what kind of images programs are generating in memory before display.
+```
+# Displays the content of memory at address 0x123AB as a buffer of resolution 320x200
+(gdb) monitor vbuffer add 0x123AB 320x200
+
+# Displays the content of memory at address 0x123AB as a buffer of resolution 16x16, scaling it 10 times so that it's not tiny
+(gdb) monitor vbuffer add 0x123AB 16x16 10
+
+# Remove the buffer display
+(gdb) monitor vbuffer remove 0x123AB
+
+# List information about currently displayed buffers
+(gdb) monitor vbuffer list
+
+#Refreshing screen or buffers while debugging
+(gdb) monitor vbuffer refresh
 ```
 
 ## Detailed reverse engineering process

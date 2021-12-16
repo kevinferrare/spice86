@@ -10,8 +10,6 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
   protected String generateFileHeaderWithAccessors(int numberOfGlobals, String globalsContent, String segmentValues) {
     return MessageFormat.format(
         """
-            import java.util.Map;
-
             import spice86.emulator.function.FunctionInformation;
             import spice86.emulator.machine.Machine;
             import spice86.emulator.memory.SegmentedAddress;
@@ -29,22 +27,19 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
             {2}
             // Stubs for overrides
             @SuppressWarnings("java:S100")
-            public class Stubs : JavaOverrideHelper '{'
-              constructor(Map<SegmentedAddress, FunctionInformation> functionInformations, String prefix, Machine machine) '{'
-                super(functionInformations, prefix, machine);
-              '}'
+            open class Stubs(
+              functionInformations: MutableMap<SegmentedAddress, FunctionInformation>,
+              prefix: String,
+              machine: Machine
+            ) : JavaOverrideHelper(functionInformations, prefix, machine) '{'
             """,
         numberOfGlobals, segmentValues, globalsContent);
   }
 
   protected String generateClassForGlobalsOnCSWithValue(String segmentValueHex, String globalsContent) {
     return MessageFormat.format("""
-        @SuppressWarnings("java:S100")
-        public class GlobalsOnCsSegment{0} : MemoryBasedDataStructureWithBaseAddress '{'
-          constructor(Machine machine) '{'
-            super(machine.getMemory(), {0} * 0x10);
-          '}'
-
+        // Accessors for values accessed via register CS. Since CS values do not change in the overrides as they do in the original ASM, provide hardcoded accessors
+        open class GlobalsOnCsSegment{0}(machine: Machine) : MemoryBasedDataStructureWithBaseAddress(machine.getMemory(), {0} * 0x10) '{'
         {1}
         '}'
         """, segmentValueHex, globalsContent);
@@ -53,12 +48,7 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
   protected String generateClassForGlobalsOnSegment(String segmentName, String segmentNameCamel, String globalsContent) {
     return MessageFormat.format("""
         // Accessors for values accessed via register {0}
-        @SuppressWarnings("java:S100")
-        public class GlobalsOn{1} : MemoryBasedDataStructureWith{1}BaseAddress '{'
-          constructor(Machine machine) '{'
-            super(machine);
-          '}'
-
+        open class GlobalsOn{1}(machine: Machine) : MemoryBasedDataStructureWith{1}BaseAddress(machine) '{'
         {2}
         '}'
         """, segmentName, segmentNameCamel, globalsContent);
@@ -66,15 +56,15 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
 
   protected String generatePointerGetter(String comment, String javaName, String offset) {
     return MessageFormat.format("""
-            var `{1}`: SegmentedAddress
+            var {1}: SegmentedAddress
               {0}
-              get() = new SegmentedAddress(getUint16({2} + 2), getUint16({2}))
+              get() = SegmentedAddress(getUint16({2} + 2), getUint16({2}))
           """, comment, javaName, offset);
   }
 
   protected String generateNonPointerGetter(String comment, String javaName, String offset, int bits) {
       return MessageFormat.format("""
-            var `{1}`: Int
+            var {1}: Int
               {0}
               get() = getUint{2}({3})
           """, comment, javaName, bits, offset);
@@ -83,9 +73,9 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
   protected String generatePointerSetter(String comment, String javaName, String offset) {
     return MessageFormat.format("""
               {0}
-              set(value: SegmentedAddress) = '{'
-                setUint16({2} + 2, value.getSegment())
-                setUint16({2}, value.getOffset())
+              set(value) '{'
+                setUint16({2} + 2, value.segment)
+                setUint16({2}, value.offset)
               '}'
           """, comment, javaName, offset);
   }
@@ -93,7 +83,7 @@ public class KotlinStubToStringConverter extends JvmFunctionToStringConverter {
   protected String generateNonPointerSetter(String comment, String javaName, String offset, int bits) {
     return MessageFormat.format("""
               {0}
-              set(value: Int) = setUint{2}({3}, value)
+              set(value) = setUint{2}({3}, value)
           """, comment, javaName, bits, offset);
   }
 

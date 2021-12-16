@@ -174,7 +174,7 @@ public abstract class JvmFunctionToStringConverter extends FunctionInformationTo
     }
     OperandSize operandSize = addressOperation.getOperandSize();
 
-    String javaName = ConvertUtils.toJavaString(address) + "_" + operandSize.getName();
+    String javaName = operandSize.getName() + "_" + ConvertUtils.toJavaString(address);
     String name = address.getName();
     if (StringUtils.isNotEmpty(name)) {
       javaName += "_" + name;
