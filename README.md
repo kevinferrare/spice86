@@ -345,10 +345,13 @@ Input:
 - Mouse (callback in mouse driver not implemented yet)
 - No joystick for now
 
+CD-ROM:
+- No MSCDEX support for now. Some games, like DUNE, can be copied entirely from the CD and run from the hard drive.
+
 Sound:
 - No sound for now, games will not detect sound blaster or adlib.
 
-Compatibility list availble [here](COMPATIBILITY.md).
+Compatibility list available [here](COMPATIBILITY.md).
 
 ### How to build
 Locally you will need:
@@ -358,6 +361,22 @@ Locally you will need:
 ```
 mvn clean install
 ```
+
+### How to debug
+
+The main class is 
+
+```java
+spice86.main.Main
+```
+
+If you get this error:
+
+```
+Error: JavaFX runtime components are missing, and are required to run this application
+```
+
+Then the selected main class is the wrong one.
 
 ### Some screenshots
 Cryo dune:
