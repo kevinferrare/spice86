@@ -240,7 +240,7 @@ package my.program;
 public class MyProgramOverrideSupplier implements OverrideSupplier {
   @Override
   public Map<SegmentedAddress, FunctionInformation> generateFunctionInformations(int programStartSegment,
-      Machine machine) {
+                                                                                 Machine machine) {
     Map<SegmentedAddress, FunctionInformation> res = new HashMap<>();
     // In more complex examples, overrides may call each other
     new MyOverrides(res, programStartSegment, machine);
@@ -315,8 +315,8 @@ If you just want to use the function names and not the overrides, you could add 
 If you build a project around this, just call Spice86 like this in your main:
 ```java
   public static void main(String[] args) {
-    Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
-  }
+        Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
+        }
 ```
 ### Generating overrides
 The command dumpJavaStubs generates a text file with some java stubs that could be generated automatically.
@@ -329,9 +329,9 @@ Generated stub look like this:
 ...
 // defineFunction(0x2538, 0x151, "unknown", this::unknown_0x2538_0x151_0x254D1);
 public Runnable unknown_0x2538_0x151_0x254D1() {
-  return farRet();
-}
-...
+        return farRet();
+        }
+        ...
 ```
 You can copy paste the stub to your code.
 
@@ -368,10 +368,13 @@ Input:
 - Mouse (callback in mouse driver not implemented yet)
 - No joystick for now
 
+CD-ROM:
+- No MSCDEX support for now. Some games, like DUNE, can be copied entirely from the CD and run from the hard drive.
+
 Sound:
 - No sound for now, games will not detect sound blaster or adlib.
 
-Compatibility list availble [here](COMPATIBILITY.md).
+Compatibility list available [here](COMPATIBILITY.md).
 
 ### How to build
 Locally you will need:
@@ -381,6 +384,22 @@ Locally you will need:
 ```
 mvn clean install
 ```
+
+### How to debug
+
+The main class is
+
+```java
+spice86.main.Main
+```
+
+If you get this error:
+
+```
+Error: JavaFX runtime components are missing, and are required to run this application
+```
+
+Then the selected main class is the wrong one.
 
 ### Some screenshots
 Cryo dune:
