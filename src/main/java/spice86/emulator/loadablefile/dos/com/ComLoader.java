@@ -18,8 +18,8 @@ public class ComLoader extends ExecutableFileLoader {
   }
 
   @Override
-  public byte[] loadFile(String file) throws IOException {
-    new PspGenerator(machine).generatePsp(startSegment);
+  public byte[] loadFile(String file, String arguments) throws IOException {
+    new PspGenerator(machine).generatePsp(startSegment, arguments);
 
     byte[] com = this.readFile(file);
     int physicalStartAddress = MemoryUtils.toPhysicalAddress(startSegment, COM_OFFSET);

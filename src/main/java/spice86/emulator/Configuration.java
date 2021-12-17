@@ -7,6 +7,7 @@ import spice86.emulator.function.OverrideSupplier;
  */
 public class Configuration {
   private String exe;
+  private String exeArgs;
   private String cDrive;
   // Only for timer
   private Long instructionsPerSecond;
@@ -26,6 +27,14 @@ public class Configuration {
 
   public void setExe(String exe) {
     this.exe = exe;
+  }
+
+  public String getExeArgs() {
+    return exeArgs;
+  }
+
+  public void setExeArgs(String exeArgs) {
+    this.exeArgs = exeArgs;
   }
 
   public String getcDrive() {

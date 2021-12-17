@@ -25,7 +25,7 @@ public class ExeLoader extends ExecutableFileLoader {
   }
 
   @Override
-  public byte[] loadFile(String file) throws IOException {
+  public byte[] loadFile(String file, String arguments) throws IOException {
     byte[] exe = this.readFile(file);
     LOGGER.debug("Exe size: {}", exe.length);
     ExeFile exeFile = new ExeFile(exe);
@@ -33,7 +33,7 @@ public class ExeLoader extends ExecutableFileLoader {
     loadExeFileInMemory(exeFile, startSegment);
     int pspSegment = startSegment - 0x10;
     setupCpuForExe(exeFile, startSegment, pspSegment);
-    new PspGenerator(machine).generatePsp(pspSegment);
+    new PspGenerator(machine).generatePsp(pspSegment, arguments);
     LOGGER.debug("Initial CPU State: {}", cpu.getState());
     return exe;
   }

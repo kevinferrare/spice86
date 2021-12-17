@@ -19,7 +19,7 @@ public class BiosLoader extends ExecutableFileLoader {
   }
 
   @Override
-  public byte[] loadFile(String file) throws IOException {
+  public byte[] loadFile(String file, String arguments) throws IOException {
     byte[] bios = this.readFile(file);
     int physicalStartAddress = MemoryUtils.toPhysicalAddress(CODE_SEGMENT, 0);
     memory.loadData(physicalStartAddress, bios);

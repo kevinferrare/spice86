@@ -131,6 +131,7 @@ public class CommandLineParser {
           """
               Parameters:
               <path to exe>
+              --exeArgs="<List of parameters to give to the emulated program>"
               --cDrive=<path to C drive, default is .>
               --instructionsPerSecond=<number of instructions that have to be executed executed by the emulator to consider a second passed> if blank will use time based timer.
               --timeMultiplier=<time multiplier> if >1 will go faster, if <1 will go slower.
@@ -144,6 +145,7 @@ public class CommandLineParser {
       return null;
     }
     Map<String, String> commandLineParameters = parameters.getNamed();
+    configuration.setExeArgs(commandLineParameters.get("exeArgs"));
     configuration.setcDrive(getCDrive(commandLineParameters.get("cDrive")));
     configuration.setInstructionsPerSecond(
         parseInstructionsPerSecondParameter(commandLineParameters.get("instructionsPerSecond")));

@@ -120,7 +120,7 @@ public class ProgramExecutor implements java.io.Closeable {
     ExecutableFileLoader loader = createExecutableFileLoader(fileName, configuration.getProgramEntryPointSegment());
     LOGGER.info("Loading file {} with loader {}", fileName, loader.getClass());
     try {
-      byte[] fileContent = loader.loadFile(fileName);
+      byte[] fileContent = loader.loadFile(fileName, configuration.getExeArgs());
       checkSha256Checksum(fileContent, configuration.getExpectedChecksum());
     } catch (IOException e) {
       throw new UnrecoverableException("Failed to read file " + fileName, e);

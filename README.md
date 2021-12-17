@@ -314,9 +314,9 @@ If you just want to use the function names and not the overrides, you could add 
 
 If you build a project around this, just call Spice86 like this in your main:
 ```java
-  public static void main(String[] args) {
-        Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
-        }
+public static void main(String[] args) {
+  Spice86Application.runWithOverrides(args, MyProgramOverrideSupplier.class);
+}
 ```
 ### Generating overrides
 The command dumpJavaStubs generates a text file with some java stubs that could be generated automatically.
@@ -329,8 +329,8 @@ Generated stub look like this:
 ...
 // defineFunction(0x2538, 0x151, "unknown", this::unknown_0x2538_0x151_0x254D1);
 public Runnable unknown_0x2538_0x151_0x254D1() {
-        return farRet();
-        }
+  return farRet();
+}
         ...
 ```
 You can copy paste the stub to your code.
@@ -338,6 +338,9 @@ You can copy paste the stub to your code.
 ## Misc
 ### C Drive
 It is possible to provide a C: Drive for emulated DOS functions with the option **--cDrive**. Default is current folder. For some games you may need to set the C drive to the game folder.
+
+### Emulated program arguments
+You can pass arguments (max 127 chars!) to the emulated program with the option **--exeArgs**. Default is empty.
 
 ### Time
 The emulated Timer hardware of the PC (Intel 8259) supports measuring time from either:

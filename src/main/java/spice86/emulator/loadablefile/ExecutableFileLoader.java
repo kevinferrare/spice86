@@ -35,7 +35,7 @@ public abstract class ExecutableFileLoader {
    * @return the bytes read from the given file
    * @throws IOException
    */
-  public abstract byte[] loadFile(String file) throws IOException;
+  public abstract byte[] loadFile(String file, String arguments) throws IOException;
 
   protected byte[] readFile(String file) throws IOException {
     return Files.readAllBytes(Paths.get(file));
