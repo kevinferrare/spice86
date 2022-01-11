@@ -67,8 +67,8 @@ public class VgaDac {
     Rgb rgb = rgbs[readIndex];
     int value = switch (colour) {
       case RED_INDEX -> rgb.getR();
-      case GREEN_INDEX -> rgb.getR();
-      case BLUE_INDEX -> rgb.getR();
+      case GREEN_INDEX -> rgb.getG();
+      case BLUE_INDEX -> rgb.getB();
       default -> throw new InvalidColorIndexException(machine, colour);
     };
     colour = (colour + 1) % 3;
