@@ -8,6 +8,6 @@ import spice86.emulator.machine.Machine;
  */
 public class MemoryBasedDataStructureWithSsBaseAddress extends MemoryBasedDataStructureWithSegmentRegisterBaseAddress {
   public MemoryBasedDataStructureWithSsBaseAddress(Machine machine) {
-    super(machine, SegmentRegisters.DS_INDEX);
+    super(machine, SegmentRegisters.SS_INDEX);
   }
 }
