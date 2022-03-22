@@ -33,7 +33,7 @@ public class Gui {
   private static final Logger LOGGER = LoggerFactory.getLogger(Gui.class);
 
   private Stage stage;
-  private int mainCanvasScale = 4;
+  private int mainCanvasScale = 3;
   private AnchorPane layout = new AnchorPane();
   // Map associating a start address to a canvas
   private Map<Integer, VideoBuffer> videoBuffers = new HashMap<>();

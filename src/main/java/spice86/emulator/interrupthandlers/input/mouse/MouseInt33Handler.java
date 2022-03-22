@@ -81,10 +81,18 @@ public class MouseInt33Handler extends InterruptHandler {
     state.setBX((leftClick ? 1 : 0) | ((rightClick ? 1 : 0) << 1));
   }
 
+  private int oldX = -1;
+  private int oldY = -1;
+
   public void setMouseCursorPosition() {
     int x = state.getCX();
     int y = state.getDX();
     LOGGER.info("SET MOUSE CURSOR POSITION x={}, y={}", x, y);
+    if(oldX == gui.getMouseX() && oldY == gui.getMouseY()) {
+      return;
+    }
+    oldX = gui.getMouseX();
+    oldY = gui.getMouseY();
     gui.setMouseX(x);
     gui.setMouseY(y);
   }
