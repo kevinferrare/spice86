@@ -1,3 +1,10 @@
+# Project moved
+This is the java version of Spice86. It is not maintained anymore.
+
+We had to rewrite the project in C# to add automated code generation (java doesn't have the goto keyword, making automated ASM translation challenging)
+
+New repo is here: https://github.com/OpenRakis/Spice86/
+
 # Spice86 - A PC emulator for real mode reverse engineering
 
 Spice86 is a tool to execute, reverse engineer and rewrite real mode dos programs for which source code is not available.
